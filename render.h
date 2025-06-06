@@ -1,5 +1,5 @@
-#ifndef _TTIMER_RENDE_H_
-#define _TTIMER_RENDE_H_
+#ifndef _TTIMER_RENDER_H_
+#define _TTIMER_RENDER_H_
 
 struct Texture {
 	char *data;
@@ -7,6 +7,10 @@ struct Texture {
 	int heigh;
 };
 
+void render_init();
+
 void render(int n);
+
+void render_dispose();
 
 #endif

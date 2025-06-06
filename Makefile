@@ -1,4 +1,8 @@
-src=main.c textures.c render.c
+src=main.c textures.c
 target=ttimer
 main:
-	gcc -Wall $(src) -lncurses -o $(target)
+	echo "Select target: naive|ncurses"
+naive:
+	gcc -Wall $(src) naive_render.c -o $(target)
+ncurses:
+	gcc -Wall $(src) ncurses_render.c -lncurses -o $(target)

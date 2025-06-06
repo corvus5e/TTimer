@@ -1,4 +1,5 @@
 #include "render.h"
+
 #define W 7
 #define H 8
 

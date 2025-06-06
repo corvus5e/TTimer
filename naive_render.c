@@ -1,12 +1,21 @@
 #include "render.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #define BUF_LEN 10
 
 extern const struct Texture _textures[];
 
+void render_init(){ } // No need to init, do nothing
+
+void render_dispose(){
+	printf("\n\a");
+}
+
 void render(int n){
+
+	system("clear");
 	char buf[BUF_LEN];
 
 	if(snprintf(&buf[0], BUF_LEN, "%d", n) < 0)

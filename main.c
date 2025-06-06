@@ -13,17 +13,17 @@ int main(int argc, char *argv[]){
 	if(argc < 2 || (secs = atoi(argv[1])) <= 0)
 		secs = 60;
 
-	system("clear");
+	render_init();
 
 	for(int i = 0; i < secs; ++i){
 		render(i);
 		fflush(stdout);
 		usleep(1000000);
-		system("clear");
 	}
 
 	render(secs);
-	printf("\n\a");
+
+	render_dispose();
 
 	return 0;
 }

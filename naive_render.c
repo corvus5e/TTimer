@@ -33,5 +33,7 @@ void render(int n){
 		}
 		putchar('\n');
 	}
+
+	fflush(stdout);
 }
 

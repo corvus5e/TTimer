@@ -18,7 +18,6 @@ void render_init(){
 }
 
 void render(int n){
-	//clear();
 	erase();
 
 	char buf[BUF_LEN];

@@ -2,21 +2,33 @@
 
 #include <unistd.h>
 
-struct Timer create_timer(int ticks, int freq)
+struct Timer create_timer(int ticks, int freq, int direction)
 {
-	struct Timer t = {ticks, 0, freq};
+	struct Timer t = {ticks, 0, freq, direction};
 	return t;
 }
 
 int start_timer(struct Timer * const t, onTick update)
 {
-	for(int i = 0; i < t->ticks; ++i){
-		update(i);
-		usleep(t->freq);
+	int start, end, inc;
 
+	if(t->direction == 0){ /* count down */
+		start = t->ticks;
+		end = 0;
+		inc = -1;
+	}
+	else { /* count up */
+		start = 0;
+		end = t->ticks;
+		inc = 1;
 	}
 
-	update(t->ticks);
+	for(int i = start; i != end; i += inc){
+		update(i);
+		usleep(t->freq);
+	}
+
+	update(end);
 
 	return 0;
 }

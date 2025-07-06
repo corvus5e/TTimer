@@ -1,4 +1,4 @@
-#include "render.h"
+#include "io.h"
 
 #include <ncurses.h>
 
@@ -12,6 +12,7 @@ void get_offset(int* y, int *x, int w, int h);
 
 void render_init(){
 	initscr();
+	cbreak();
 	noecho();
 	curs_set(0);
 	getmaxyx(stdscr,max_row, max_col);

@@ -2,6 +2,7 @@
  * TTimer - timer, which prints time to terminal
 */
 
+#define _POSIX_C_SOURCE 199309L
 #include <stdio.h>
 #include <stdlib.h>
 #include <threads.h>
@@ -9,13 +10,11 @@
 #include <unistd.h>
 
 #include "io.h"
-
-static int stopped = 0;
-static int paused = 0;
-static time_t pause_start = 0;
-static int total_paused_time = 0;
+#include "log.h"
+#include "timer_state.h"
 
 int run_timer(void *arg);
+int handle_user_input(void *arg);
 
 int main(int argc, char *argv[])
 {
@@ -26,30 +25,17 @@ int main(int argc, char *argv[])
 
 	render_init();
 
-	thrd_t timer_thread;
+	struct TimerState ts;
+	ts.stopped = 0;
+	ts.paused = 0;
 
-	if (thrd_create(&timer_thread, run_timer, NULL) != thrd_success) {
+	thrd_t timer_thread;
+	if (thrd_create(&timer_thread, run_timer, &ts) != thrd_success) {
 		fputs("Failed to create timer thread\n", stderr);
 		exit(1);
 	}
 
-	while (!stopped) {
-		switch (getchar()) {
-		case 'q':
-			stopped = 1;
-			break;
-		case 32 /*space*/:
-			if (!paused) {
-				pause_start = time(NULL);
-				paused = 1;
-			} else {
-				total_paused_time +=
-				    difftime(time(NULL), pause_start);
-				paused = 0;
-			}
-			break;
-		}
-	}
+	handle_user_input(&ts); // Blocking call
 
 	render_dispose();
 
@@ -60,16 +46,37 @@ int main(int argc, char *argv[])
 
 int run_timer(void *arg)
 {
-	time_t start = time(NULL);
-	int time_elapsed = 0;
+	struct TimerState *ts = (struct TimerState*)arg;
 
-	while (!stopped) {
-		if (!paused)
-			time_elapsed = (int)difftime(time(NULL), start) -
-				       total_paused_time;
+	ts->start = time(NULL);
+	ts->time_elapsed_sec = 0;
 
-		render(time_elapsed);
-		usleep(100000); // 100 ms
+	struct timespec delay;
+	delay.tv_nsec = 100000000;
+
+	while (!ts->stopped) {
+		timer_update(ts);
+		render(ts);
+		nanosleep(&delay, NULL); // 100 ms
+	}
+
+	return 0;
+}
+
+int handle_user_input(void *arg)
+{
+	struct TimerState *ts = (struct TimerState*)arg;
+
+	while (!ts->stopped) {
+		switch (get_user_input()) {
+		case STOP_TIMER:
+			timer_stop(ts);
+			log_timer(ts);
+			break;
+		case PAUSE_RESUME_TIMER:
+			timer_pause(ts);
+			break;
+		}
 	}
 
 	return 0;

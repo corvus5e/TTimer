@@ -1,4 +1,4 @@
-src=main.c textures.c timer.c
+src=main.c textures.c sleep_timer.c
 target=ttimer
 main:
 	echo "Select target: naive|ncurses"

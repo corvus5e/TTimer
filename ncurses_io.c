@@ -27,28 +27,33 @@ void render(const struct TimerState *ts)
 	char buf[BUF_LEN];
 	int len = 0;
 
-	if ((len = snprintf(&buf[0], BUF_LEN, "%d", ts->time_elapsed_sec)) < 0)
+	int seconds = ts->time_elapsed_sec % 60;
+	int minutes = ts->time_elapsed_sec / 60;
+	int hours = minutes / 60;
+
+	if ((len = snprintf(&buf[0], BUF_LEN, "%02d:%02d:%02d", hours, minutes, seconds)) < 0)
 		return;
 
-	int w = _textures[0].width; // assume size of textures are same
-	int h = _textures[0].heigh;
+	int y_offset, x_offset;
+	get_offset(&y_offset, &x_offset, 48/*width of clock*/, 7/*height of clock*/);
+
 	int column_shift = 0;
 
-	int y_offset, x_offset;
-	get_offset(&y_offset, &x_offset, len * w, h);
-
 	for (char *s = buf; *s; ++s) {
-		const struct Texture *t = &_textures[*s - '0'];
+
+		const struct Texture *t = &_textures[*s == ':' ? 10 : *s - '0'];
+
 		const char *d = t->data;
 
-		for (int i = 0; i < h; ++i) {
-			for (int j = 0; j < w; ++j) {
+		for (int i = 0; i < t->heigh; ++i) {
+			for (int j = 0; j < t->width; ++j) {
 				mvaddch(i + y_offset,
 					j + column_shift + x_offset,
-					*(d + i * w + j));
+					*(d + i * t->width + j));
 			}
 		}
-		column_shift += w;
+
+		column_shift += t->width;
 	}
 
 	if (ts->paused) {

@@ -52,12 +52,12 @@ void *run_timer(void *arg)
 	ts->time_elapsed_sec = 0;
 
 	struct timespec delay;
-	delay.tv_nsec = 100000000;
+	delay.tv_nsec = 100000000; // 100 ms
 
 	while (!ts->stopped) {
 		timer_update(ts);
 		render(ts);
-		nanosleep(&delay, NULL); // 100 ms
+		nanosleep(&delay, NULL);
 	}
 
 	return NULL;

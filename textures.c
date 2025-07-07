@@ -92,5 +92,13 @@ const struct Texture _textures[] = {
  \"mmm\" \
        \
        ", W, H},
+{"   \
+   \
+ # \
+   \
+ # \
+   \
+   \
+   ", 3, H},
 };
 

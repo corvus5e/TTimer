@@ -5,15 +5,15 @@
 #define _POSIX_C_SOURCE 199309L
 #include <stdio.h>
 #include <stdlib.h>
-#include <threads.h>
 #include <time.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "io.h"
 #include "log.h"
 #include "timer_state.h"
 
-int run_timer(void *arg);
+void* run_timer(void *arg);
 int handle_user_input(void *arg);
 
 int main(int argc, char *argv[])
@@ -29,8 +29,8 @@ int main(int argc, char *argv[])
 	ts.stopped = 0;
 	ts.paused = 0;
 
-	thrd_t timer_thread;
-	if (thrd_create(&timer_thread, run_timer, &ts) != thrd_success) {
+	pthread_t thread;
+	if (pthread_create(&thread, NULL, run_timer, &ts) != 0) {
 		fputs("Failed to create timer thread\n", stderr);
 		exit(1);
 	}
@@ -39,12 +39,12 @@ int main(int argc, char *argv[])
 
 	render_dispose();
 
-	thrd_join(timer_thread, NULL);
+	pthread_join(thread, NULL);
 
 	return 0;
 }
 
-int run_timer(void *arg)
+void *run_timer(void *arg)
 {
 	struct TimerState *ts = (struct TimerState*)arg;
 
@@ -60,7 +60,7 @@ int run_timer(void *arg)
 		nanosleep(&delay, NULL); // 100 ms
 	}
 
-	return 0;
+	return NULL;
 }
 
 int handle_user_input(void *arg)

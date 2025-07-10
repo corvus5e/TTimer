@@ -2,6 +2,16 @@
 
 #include <unistd.h>
 
+void timer_init(struct TimerState *ts)
+{
+	ts->stopped = 0;
+	ts->paused = 0;
+	ts->start = 0;
+	ts->time_elapsed_sec = 0;
+	ts->total_paused_time_sec = 0;
+	ts->last_pause_start = 0;
+}
+
 void timer_update(struct TimerState *ts)
 {
 	if (!ts->stopped && !ts->paused) {

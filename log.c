@@ -10,11 +10,12 @@ int log_timer(const struct TimerState* ts)
 		return -1;
 	}
 
-	int min = ts->time_elapsed_sec / 60;
-	int sec = ts->time_elapsed_sec % 60;
+	int m = (ts->time_elapsed_sec / 60) % 60;
+	int s = ts->time_elapsed_sec % 60;
+	int h = ts->time_elapsed_sec / 3600;
 
-	char buff[20];
-	sprintf(buff, "%s%d:%d:%d\n", asctime(localtime(&ts->start)), 0, min, sec);
+	char buff[100];
+	sprintf(buff, "%s%d:%d:%d\n", asctime(localtime(&ts->start)), h, m, s);
 
 	fputs(buff, f);
 

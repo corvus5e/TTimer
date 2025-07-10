@@ -21,13 +21,12 @@ int main(int argc, char *argv[])
 	int secs = 0;
 	if (argc < 2 || (secs = atoi(argv[1])) <= 0)
 		secs = 60;
-	int countUp = 0;
 
 	render_init();
 
 	struct TimerState ts;
-	ts.stopped = 0;
-	ts.paused = 0;
+
+	timer_init(&ts);
 
 	pthread_t thread;
 	if (pthread_create(&thread, NULL, run_timer, &ts) != 0) {

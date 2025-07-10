@@ -28,8 +28,8 @@ void render(const struct TimerState *ts)
 	int len = 0;
 
 	int seconds = ts->time_elapsed_sec % 60;
-	int minutes = ts->time_elapsed_sec / 60;
-	int hours = minutes / 60;
+	int minutes = (ts->time_elapsed_sec / 60) % 60;
+	int hours = ts->time_elapsed_sec / 3600;
 
 	if ((len = snprintf(&buf[0], BUF_LEN, "%02d:%02d:%02d", hours, minutes, seconds)) < 0)
 		return;

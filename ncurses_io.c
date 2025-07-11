@@ -2,7 +2,7 @@
 
 #include <ncurses.h>
 
-#include "timer_state.h"
+#include "timer.h"
 
 #define BUF_LEN 10
 
@@ -20,7 +20,7 @@ void render_init(){
 	getmaxyx(stdscr,max_row, max_col);
 }
 
-void render(const struct TimerState *ts)
+void render(const struct Timer*ts)
 {
 	erase();
 

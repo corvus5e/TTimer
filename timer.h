@@ -3,7 +3,7 @@
 
 #include <time.h>
 
-struct TimerState {
+struct Timer {
 	int stopped;
 	int paused;
 	time_t start;
@@ -12,12 +12,12 @@ struct TimerState {
 	int total_paused_time_sec;
 };
 
-void timer_init(struct TimerState *ts);
+void timer_init(struct Timer *ts);
 
-void timer_update(struct TimerState *ts);
+void timer_update(struct Timer *ts);
 
-void timer_stop(struct TimerState *ts);
+void timer_stop(struct Timer *ts);
 
-void timer_pause(struct TimerState *ts);
+void timer_pause(struct Timer *ts);
 
 #endif

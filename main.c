@@ -11,7 +11,7 @@
 
 #include "io.h"
 #include "log.h"
-#include "timer_state.h"
+#include "timer.h"
 
 void* run_timer(void *arg);
 int handle_user_input(void *arg);
@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 
 	render_init();
 
-	struct TimerState ts;
+	struct Timer ts;
 
 	timer_init(&ts);
 
@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 
 void *run_timer(void *arg)
 {
-	struct TimerState *ts = (struct TimerState*)arg;
+	struct Timer *ts = (struct Timer*)arg;
 
 	ts->start = time(NULL);
 	ts->time_elapsed_sec = 0;
@@ -64,7 +64,7 @@ void *run_timer(void *arg)
 
 int handle_user_input(void *arg)
 {
-	struct TimerState *ts = (struct TimerState*)arg;
+	struct Timer *ts = (struct Timer*)arg;
 
 	while (!ts->stopped) {
 		switch (get_user_input()) {

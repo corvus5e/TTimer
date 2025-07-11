@@ -1,7 +1,7 @@
 #ifndef _TTIMER_RENDER_H_
 #define _TTIMER_RENDER_H_
 
-#include "timer_state.h"
+#include "timer.h"
 
 struct Texture {
 	char *data;
@@ -16,7 +16,7 @@ enum UserInput {
 
 void render_init();
 
-void render(const struct TimerState *);
+void render(const struct Timer *);
 
 void render_dispose();
 

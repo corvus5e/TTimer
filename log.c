@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-int log_timer(const struct TimerState* ts)
+int log_timer(const struct Timer* ts)
 {
 	FILE *f;
 	if ((f = fopen("timer_log.log", "a")) == NULL) {

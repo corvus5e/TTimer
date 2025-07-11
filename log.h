@@ -1,8 +1,8 @@
 #ifndef _TTIMER_LOG_H_
 #define _TTIMER_LOG_H_
 
-#include "timer_state.h"
+#include "timer.h"
 
-int log_timer(const struct TimerState*);
+int log_timer(const struct Timer*);
 
 #endif

@@ -1,8 +1,8 @@
-#include "timer_state.h"
+#include "timer.h"
 
 #include <unistd.h>
 
-void timer_init(struct TimerState *ts)
+void timer_init(struct Timer *ts)
 {
 	ts->stopped = 0;
 	ts->paused = 0;
@@ -12,7 +12,7 @@ void timer_init(struct TimerState *ts)
 	ts->last_pause_start = 0;
 }
 
-void timer_update(struct TimerState *ts)
+void timer_update(struct Timer *ts)
 {
 	if (!ts->stopped && !ts->paused) {
 		ts->time_elapsed_sec = (int)difftime(time(NULL), ts->start) -
@@ -20,12 +20,12 @@ void timer_update(struct TimerState *ts)
 	}
 }
 
-void timer_stop(struct TimerState *ts)
+void timer_stop(struct Timer *ts)
 {
 	ts->stopped = 1;
 }
 
-void timer_pause(struct TimerState *ts)
+void timer_pause(struct Timer *ts)
 {
 	if (!ts->paused) {
 		ts->last_pause_start = time(NULL);
@@ -35,5 +35,4 @@ void timer_pause(struct TimerState *ts)
 		    difftime(time(NULL), ts->last_pause_start);
 		ts->paused = 0;
 	}
-
 }

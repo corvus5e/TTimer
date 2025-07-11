@@ -20,6 +20,12 @@ void timer_update(struct Timer *ts)
 	}
 }
 
+void timer_start(struct Timer *ts)
+{
+	ts->start = time(NULL);
+	ts->time_elapsed_sec = 0;
+}
+
 void timer_stop(struct Timer *ts)
 {
 	ts->stopped = 1;

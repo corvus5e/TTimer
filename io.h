@@ -10,13 +10,17 @@ struct Texture {
 };
 
 enum UserInput {
-	STOP_TIMER = 1,
-	PAUSE_RESUME_TIMER = 2,
+	STOP_TIMER_INPUT,
+	PAUSE_RESUME_TIMER_INPUT,
+	HELP_INPUT,
+	BACK_INPUT
 };
 
 void render_init();
 
 void render(const struct Timer *);
+
+void render_help();
 
 void render_dispose();
 

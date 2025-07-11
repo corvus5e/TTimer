@@ -16,6 +16,8 @@ void timer_init(struct Timer *ts);
 
 void timer_update(struct Timer *ts);
 
+void timer_start(struct Timer *ts);
+
 void timer_stop(struct Timer *ts);
 
 void timer_pause(struct Timer *ts);

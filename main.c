@@ -13,6 +13,13 @@
 #include "log.h"
 #include "timer.h"
 
+enum AppState { TIMER_STATE, HELP_STATE, STATISTICS_STATE };
+
+struct AppContext {
+	struct Timer *timer;
+	enum AppState *state;
+};
+
 void* run_timer(void *arg);
 int handle_user_input(void *arg);
 
@@ -24,17 +31,23 @@ int main(int argc, char *argv[])
 
 	render_init();
 
-	struct Timer ts;
+	struct Timer timer;
+	enum AppState state = TIMER_STATE;
 
-	timer_init(&ts);
+	timer_init(&timer);
+
+	struct AppContext context;
+	context.timer = &timer;
+	context.state = &state;
+
 
 	pthread_t thread;
-	if (pthread_create(&thread, NULL, run_timer, &ts) != 0) {
+	if (pthread_create(&thread, NULL, run_timer, &context) != 0) {
 		fputs("Failed to create timer thread\n", stderr);
 		exit(1);
 	}
 
-	handle_user_input(&ts); // Blocking call
+	handle_user_input(&context); // Blocking call
 
 	render_dispose();
 
@@ -45,17 +58,27 @@ int main(int argc, char *argv[])
 
 void *run_timer(void *arg)
 {
-	struct Timer *ts = (struct Timer*)arg;
+	struct AppContext *context = (struct AppContext*)arg;
+	struct Timer *timer = context->timer;
+	enum AppState *state = context->state;
 
-	ts->start = time(NULL);
-	ts->time_elapsed_sec = 0;
+	timer_start(timer);
 
 	struct timespec delay;
 	delay.tv_nsec = 100000000; // 100 ms
 
-	while (!ts->stopped) {
-		timer_update(ts);
-		render(ts);
+	while (!timer->stopped) {
+		switch (*state) {
+		case TIMER_STATE:
+			render(timer);
+			break;
+		case HELP_STATE:
+			render_help();
+			break;
+		case STATISTICS_STATE:
+			break;
+		}
+		timer_update(timer);
 		nanosleep(&delay, NULL);
 	}
 
@@ -64,16 +87,23 @@ void *run_timer(void *arg)
 
 int handle_user_input(void *arg)
 {
-	struct Timer *ts = (struct Timer*)arg;
+	struct AppContext *context = (struct AppContext*)arg;
+	struct Timer *timer = context->timer;
 
-	while (!ts->stopped) {
+	while (!timer->stopped) {
 		switch (get_user_input()) {
-		case STOP_TIMER:
-			timer_stop(ts);
-			log_timer(ts);
+		case HELP_INPUT:
+			*context->state = HELP_STATE;
 			break;
-		case PAUSE_RESUME_TIMER:
-			timer_pause(ts);
+		case BACK_INPUT:
+			*context->state = TIMER_STATE;
+			break;
+		case STOP_TIMER_INPUT:
+			timer_stop(timer);
+			log_timer(timer);
+			break;
+		case PAUSE_RESUME_TIMER_INPUT:
+			timer_pause(timer);
 			break;
 		}
 	}

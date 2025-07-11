@@ -5,6 +5,7 @@
 #include "timer.h"
 
 #define BUF_LEN 10
+#define ESC 27
 
 extern const struct Texture _textures[];
 
@@ -63,6 +64,18 @@ void render(const struct Timer*ts)
 	refresh();
 }
 
+void render_help()
+{
+	erase();
+	mvprintw(1, 5, "TTimer");
+	mvprintw(3, 5, "'Space' - pause/resume timer");
+	mvprintw(3, 5, "'q'     - quit timer and save your time");
+	mvprintw(4, 5, "'Esc'   - back to timer");
+	mvprintw(5, 5, "'h'     - show this help");
+
+	refresh();
+}
+
 void render_dispose(){
 	mvaddstr(max_row - 1, 0, "Press any key to exit ...");
 	refresh();
@@ -80,9 +93,13 @@ enum UserInput get_user_input()
 {
 	switch (getch()) {
 	case 'q':
-		return STOP_TIMER;
+		return STOP_TIMER_INPUT;
+	case 'h':
+		return HELP_INPUT;
+	case ESC:
+		return BACK_INPUT;
 	case ' ':
-		return PAUSE_RESUME_TIMER;
+		return PAUSE_RESUME_TIMER_INPUT;
 	}
 	return 0;
 }

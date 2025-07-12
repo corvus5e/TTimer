@@ -8,7 +8,7 @@ struct Timer {
 	int paused;
 	time_t start;
 	int time_elapsed_sec;
-	time_t last_pause_start;
+	time_t last_resume_start;
 	int total_paused_time_sec;
 };
 

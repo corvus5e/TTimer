@@ -9,7 +9,7 @@ void timer_init(struct Timer *ts)
 	ts->start = 0;
 	ts->time_elapsed_sec = 0;
 	ts->total_paused_time_sec = 0;
-	ts->last_pause_start = 0;
+	ts->last_resume_start = 0;
 }
 
 void timer_update(struct Timer *ts)
@@ -34,11 +34,11 @@ void timer_stop(struct Timer *ts)
 void timer_pause(struct Timer *ts)
 {
 	if (!ts->paused) {
-		ts->last_pause_start = time(NULL);
+		ts->last_resume_start = time(NULL);
 		ts->paused = 1;
 	} else {
 		ts->total_paused_time_sec +=
-		    difftime(time(NULL), ts->last_pause_start);
+		    difftime(time(NULL), ts->last_resume_start);
 		ts->paused = 0;
 	}
 }

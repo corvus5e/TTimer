@@ -10,10 +10,10 @@
 #include <pthread.h>
 
 #include "io.h"
-#include "log.h"
+#include "db.h"
 #include "timer.h"
 
-enum AppView { TIMER_VIEW, HELP_VIEW, GRAPH_VIEW };
+enum AppView { TIMER_VIEW, HELP_VIEW, GRAPH_VIEW};
 
 struct AppContext {
 	struct Timer *timer;
@@ -30,6 +30,10 @@ int main(int argc, char *argv[])
 		secs = 60;
 
 	render_init();
+	if(db_init() != 0) {
+		fprintf(stderr, "Failed to initialize db\n");
+		return 1;
+	}
 
 	struct Timer timer;
 	enum AppView view = TIMER_VIEW;
@@ -48,9 +52,10 @@ int main(int argc, char *argv[])
 
 	handle_user_input(&context); // Blocking call
 
-	render_dispose();
-
 	pthread_join(thread, NULL);
+
+	render_dispose();
+	db_dispose();
 
 	return 0;
 }
@@ -99,11 +104,14 @@ int handle_user_input(void *arg)
 			*context->view = TIMER_VIEW;
 			break;
 		case GRAPH_INPUT:
+			if(db_get_time(NULL, NULL))
+				fprintf(stderr, "Error: Failed to get data from db\n");
 			*context->view = GRAPH_VIEW;
 			break;
 		case STOP_TIMER_INPUT:
 			timer_stop(timer);
-			log_timer(timer);
+			if (db_save_time(timer)) //TODO: Consider move it from input listen loop?
+				fprintf(stderr, "Error: Failed to store data into db\n");
 			break;
 		case PAUSE_RESUME_TIMER_INPUT:
 			timer_pause(timer);

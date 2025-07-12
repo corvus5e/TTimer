@@ -9,7 +9,7 @@
 
 extern const struct Texture _textures[];
 
-int max_row, max_col;
+static int y_offset, x_offset;
 
 void get_offset(int* y, int *x, int w, int h);
 
@@ -18,10 +18,10 @@ void render_init(){
 	cbreak();
 	noecho();
 	curs_set(0);
-	getmaxyx(stdscr,max_row, max_col);
+	get_offset(&y_offset, &x_offset, 48/*width of clock*/, 7/*height of clock*/);
 }
 
-void render(const struct Timer*ts)
+void render_timer(const struct Timer*ts)
 {
 	erase();
 
@@ -34,9 +34,6 @@ void render(const struct Timer*ts)
 
 	if ((len = snprintf(&buf[0], BUF_LEN, "%02d:%02d:%02d", hours, minutes, seconds)) < 0)
 		return;
-
-	int y_offset, x_offset;
-	get_offset(&y_offset, &x_offset, 48/*width of clock*/, 7/*height of clock*/);
 
 	int column_shift = 0;
 
@@ -58,7 +55,7 @@ void render(const struct Timer*ts)
 	}
 
 	if (ts->paused) {
-		mvprintw(max_row - 1, 0, "Paused");
+		mvprintw(LINES - 1, 0, "Paused");
 	}
 
 	refresh();
@@ -71,13 +68,43 @@ void render_help()
 	mvprintw(3, 5, "'Space' - pause/resume timer");
 	mvprintw(3, 5, "'q'     - quit timer and save your time");
 	mvprintw(4, 5, "'Esc'   - back to timer");
-	mvprintw(5, 5, "'h'     - show this help");
+	mvprintw(5, 5, "'g'     - show time graph");
+	mvprintw(6, 5, "'h'     - show this help");
+	mvprintw(7, 5, "Window size: %d %d", LINES, COLS);
+
+	refresh();
+}
+
+void render_graph()
+{
+	const int col_w = 3;
+
+	// TODO: place holder for graph render
+	erase();
+	for (int min = 0; min < 12; ++min)
+		mvprintw(LINES - 3 - min, 1, "%d", 5 * (min+1));
+
+	for (int h = 0; h < 24; ++h) {
+		mvprintw(LINES - 1, 5 + col_w * h + 1, "%d", h);
+	}
+
+	// TODO: input data minutes timer was working for each hour
+	int min[24] = {10, 0, 0, 0, 0, 0, 0, 0, 30, 60, 40, 0,
+		       10, 0, 0, 0, 0, 0, 0, 0, 0,  30, 60, 40};
+
+	for (int i = 0; i < 24; ++i) {
+		int blocks = min[i] / 5;
+		for (int k = 0; k < col_w; ++k)
+			for (int j = 1; j <= blocks; ++j) {
+				mvaddch(LINES - 2 - j, 5 + col_w * i + k, '#');
+			}
+	}
 
 	refresh();
 }
 
 void render_dispose(){
-	mvaddstr(max_row - 1, 0, "Press any key to exit ...");
+	mvaddstr(LINES - 1, 0, "Press any key to exit ...");
 	refresh();
 	getch();
 	endwin();
@@ -85,8 +112,8 @@ void render_dispose(){
 
 void get_offset(int* y, int *x, int w, int h){
 	//TODO: Add out of bound checks
-	*x = (max_col - 1 - w) / 2;
-	*y = (max_row - 1  - h) / 2;
+	*x = (COLS - 1 - w) / 2;
+	*y = (LINES - 1  - h) / 2;
 }
 
 enum UserInput get_user_input()
@@ -96,10 +123,14 @@ enum UserInput get_user_input()
 		return STOP_TIMER_INPUT;
 	case 'h':
 		return HELP_INPUT;
+	case 'g':
+		return GRAPH_INPUT;
 	case ESC:
 		return BACK_INPUT;
 	case ' ':
 		return PAUSE_RESUME_TIMER_INPUT;
+	case KEY_RESIZE:
+		return HELP_INPUT; //TODO: handle resize
 	}
 	return 0;
 }

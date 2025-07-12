@@ -13,14 +13,14 @@
 #include "log.h"
 #include "timer.h"
 
-enum AppState { TIMER_STATE, HELP_STATE, STATISTICS_STATE };
+enum AppView { TIMER_VIEW, HELP_VIEW, GRAPH_VIEW };
 
 struct AppContext {
 	struct Timer *timer;
-	enum AppState *state;
+	enum AppView *view;
 };
 
-void* run_timer(void *arg);
+void* run_state_loop(void *arg);
 int handle_user_input(void *arg);
 
 int main(int argc, char *argv[])
@@ -32,17 +32,16 @@ int main(int argc, char *argv[])
 	render_init();
 
 	struct Timer timer;
-	enum AppState state = TIMER_STATE;
+	enum AppView view = TIMER_VIEW;
 
 	timer_init(&timer);
 
 	struct AppContext context;
 	context.timer = &timer;
-	context.state = &state;
-
+	context.view = &view;
 
 	pthread_t thread;
-	if (pthread_create(&thread, NULL, run_timer, &context) != 0) {
+	if (pthread_create(&thread, NULL, run_state_loop, &context) != 0) {
 		fputs("Failed to create timer thread\n", stderr);
 		exit(1);
 	}
@@ -56,11 +55,11 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-void *run_timer(void *arg)
+void *run_state_loop(void *arg)
 {
 	struct AppContext *context = (struct AppContext*)arg;
 	struct Timer *timer = context->timer;
-	enum AppState *state = context->state;
+	enum AppView *view = context->view;
 
 	timer_start(timer);
 
@@ -68,14 +67,15 @@ void *run_timer(void *arg)
 	delay.tv_nsec = 100000000; // 100 ms
 
 	while (!timer->stopped) {
-		switch (*state) {
-		case TIMER_STATE:
-			render(timer);
+		switch (*view) {
+		case TIMER_VIEW:
+			render_timer(timer);
 			break;
-		case HELP_STATE:
+		case HELP_VIEW:
 			render_help();
 			break;
-		case STATISTICS_STATE:
+		case GRAPH_VIEW:
+			render_graph();
 			break;
 		}
 		timer_update(timer);
@@ -93,10 +93,13 @@ int handle_user_input(void *arg)
 	while (!timer->stopped) {
 		switch (get_user_input()) {
 		case HELP_INPUT:
-			*context->state = HELP_STATE;
+			*context->view = HELP_VIEW;
 			break;
 		case BACK_INPUT:
-			*context->state = TIMER_STATE;
+			*context->view = TIMER_VIEW;
+			break;
+		case GRAPH_INPUT:
+			*context->view = GRAPH_VIEW;
 			break;
 		case STOP_TIMER_INPUT:
 			timer_stop(timer);

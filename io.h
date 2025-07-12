@@ -13,14 +13,17 @@ enum UserInput {
 	STOP_TIMER_INPUT,
 	PAUSE_RESUME_TIMER_INPUT,
 	HELP_INPUT,
-	BACK_INPUT
+	BACK_INPUT,
+	GRAPH_INPUT,
 };
 
 void render_init();
 
-void render(const struct Timer *);
+void render_timer(const struct Timer *);
 
 void render_help();
+
+void render_graph();
 
 void render_dispose();
 

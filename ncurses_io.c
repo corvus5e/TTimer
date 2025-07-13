@@ -4,6 +4,8 @@
 
 #include "timer.h"
 
+#define GETCH_TIMEOUT_MS 1000
+
 #define BUF_LEN 10
 #define ESC 27
 
@@ -19,6 +21,7 @@ void render_init(){
 	noecho();
 	curs_set(0);
 	get_offset(&y_offset, &x_offset, 48/*width of clock*/, 7/*height of clock*/);
+	timeout(GETCH_TIMEOUT_MS);
 }
 
 void render_timer(const struct Timer*ts)
@@ -103,17 +106,20 @@ void render_graph()
 	refresh();
 }
 
-void render_dispose(){
+void render_dispose()
+{
+	timeout(-1);
 	mvaddstr(LINES - 1, 0, "Press any key to exit ...");
 	refresh();
 	getch();
 	endwin();
 }
 
-void get_offset(int* y, int *x, int w, int h){
-	//TODO: Add out of bound checks
+void get_offset(int *y, int *x, int w, int h)
+{
+	// TODO: Add out of bound checks
 	*x = (COLS - 1 - w) / 2;
-	*y = (LINES - 1  - h) / 2;
+	*y = (LINES - 1 - h) / 2;
 }
 
 enum UserInput get_user_input()
@@ -130,8 +136,9 @@ enum UserInput get_user_input()
 	case ' ':
 		return PAUSE_RESUME_TIMER_INPUT;
 	case KEY_RESIZE:
-		return HELP_INPUT; //TODO: handle resize
+		return HELP_INPUT; // TODO: handle resize
 	}
-	return 0;
+
+	return IDLE_INPUT; // could be treated as use timer "tick"
 }
 

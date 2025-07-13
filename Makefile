@@ -10,5 +10,8 @@ sqlite3.o:
 libsqlite3.a: sqlite3.o
 	ar rcs libsqlite3.a sqlite3.o
 
+profile: libsqlite3.a # for gprof
+	gcc -std=c11 -Wall $(src) -pg -lncurses -lpthread -L. -lsqlite3
+
 run:
 	./$(target) 2>std_err.log

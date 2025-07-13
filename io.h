@@ -15,6 +15,7 @@ enum UserInput {
 	HELP_INPUT,
 	BACK_INPUT,
 	GRAPH_INPUT,
+	IDLE_INPUT,
 };
 
 void render_init();

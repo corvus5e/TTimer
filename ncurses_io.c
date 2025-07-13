@@ -1,5 +1,6 @@
 #include "io.h"
 
+#include <math.h>
 #include <ncurses.h>
 
 #include "timer.h"
@@ -78,12 +79,12 @@ void render_help()
 	refresh();
 }
 
-void render_graph()
+void render_graph(TimeGraph minutes_in_hour)
 {
+	erase();
+
 	const int col_w = 3;
 
-	// TODO: place holder for graph render
-	erase();
 	for (int min = 0; min < 12; ++min)
 		mvprintw(LINES - 3 - min, 1, "%d", 5 * (min+1));
 
@@ -91,16 +92,11 @@ void render_graph()
 		mvprintw(LINES - 1, 5 + col_w * h + 1, "%d", h);
 	}
 
-	// TODO: input data minutes timer was working for each hour
-	int min[24] = {10, 0, 0, 0, 0, 0, 0, 0, 30, 60, 40, 0,
-		       10, 0, 0, 0, 0, 0, 0, 0, 0,  30, 60, 40};
-
 	for (int i = 0; i < 24; ++i) {
-		int blocks = min[i] / 5;
-		for (int k = 0; k < col_w; ++k)
-			for (int j = 1; j <= blocks; ++j) {
-				mvaddch(LINES - 2 - j, 5 + col_w * i + k, '#');
-			}
+		int blocks = ceil((float)minutes_in_hour[i] / 5.0f);
+		for (int j = 1; j <= blocks; ++j) {
+			mvaddch(LINES - 2 - j, 5 + col_w * i + 1, '#');
+		}
 	}
 
 	refresh();

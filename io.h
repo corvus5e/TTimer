@@ -24,7 +24,7 @@ void render_timer(const struct Timer *);
 
 void render_help();
 
-void render_graph();
+void render_graph(TimeGraph);
 
 void render_dispose();
 

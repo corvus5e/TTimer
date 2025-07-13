@@ -12,6 +12,8 @@ struct Timer {
 	int total_paused_time_sec;
 };
 
+typedef int *TimeGraph;
+
 void timer_init(struct Timer *ts);
 
 void timer_update(struct Timer *ts);

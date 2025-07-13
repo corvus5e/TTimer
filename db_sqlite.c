@@ -1,17 +1,49 @@
 #include "db.h"
 
-#include "stdio.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <time.h>
+
 #include "sqlite3/sqlite3.h"
+#include "timer.h"
 
 #define DB_NAME "time_db.db"
 #define TBL_NAKE "tbl1"
 
+#define SECS_DAY 86400
+
 sqlite3 *db;
 
-static int callback(void *NotUsed, int argc, char **argv, char **azColName)
+static int callback(void *arg, int argc, char **argv, char **azColName)
 {
-	for (int i = 0; i < argc; i++) {
-		//fprintf(stderr, "%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+	if(argc != 2) {
+		fprintf(stderr, "Error in db: Unexpected number of columns\n");
+		return -1;
+	}
+
+	TimeGraph g = (TimeGraph)arg;
+	time_t start = (time_t)atoi(argv[0]);
+	time_t end = (time_t)atoi(argv[1]);
+
+	struct tm *buf;
+	time_t now = time(NULL);
+	buf = localtime(&now);
+
+	time_t start_day = now - buf->tm_hour * 3600 - buf->tm_min * 60 - buf->tm_sec;
+	if(start < start_day)
+		start = start_day;
+
+	time_t end_day = start_day + SECS_DAY;
+	if(end > end_day)
+		end = end_day;
+
+	int min_amount = ceil((float)(end - start) / 60.0f);
+	int hour = (start - start_day) / 3600;
+
+	for(; hour < 24 && min_amount > 0; ++hour) {
+		g[hour] = min_amount % 60;
+		min_amount -= 60;
 	}
 
 	return 0;
@@ -73,14 +105,14 @@ int db_save_time(const struct Timer *timer)
 	return 0;
 }
 
-int db_get_time(time_t *time, int *n)
+int db_get_time(TimeGraph g)
 {
 	if(!db) {
 		fprintf(stderr, "Error: db is NULL\n");
 		return -1;
 	}
 
-	//NOTE: Query today sessions
+	//NOTE: Query today sessions for now
 	char *query = sqlite3_mprintf("select start, end from tbl1 \
 			WHERE \
 			start >= unixepoch('now', 'start of day') AND \
@@ -91,7 +123,7 @@ int db_get_time(time_t *time, int *n)
 
 	char *errmsg;
 
-	int status = sqlite3_exec(db, query, callback, NULL, &errmsg);
+	int status = sqlite3_exec(db, query, callback, g, &errmsg);
 
 	sqlite3_free(query);
 

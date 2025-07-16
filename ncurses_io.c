@@ -1,7 +1,8 @@
 #include "io.h"
 
-#include <math.h>
 #include <ncurses.h>
+#include <string.h>
+#include <time.h>
 
 #include "timer.h"
 
@@ -9,6 +10,14 @@
 
 #define BUF_LEN 10
 #define ESC 27
+
+#define SECS_DAY 86400
+
+#define MINUTES_BLOCK 5
+#define GRAPH_ROWS 12 /* The hours is devided on MINUTES_BLOCK */
+#define GRAPH_COLS 24 /* Display all 24 hours*/
+
+#define COLS_WIDTH 3
 
 extern const struct Texture _textures[];
 
@@ -79,23 +88,60 @@ void render_help()
 	refresh();
 }
 
-void render_graph(TimeGraph minutes_in_hour)
+void render_graph(struct TimeRange *tr, size_t n)
 {
 	erase();
 
-	const int col_w = 3;
+	char table[GRAPH_COLS][GRAPH_ROWS] = {0};
 
-	for (int min = 0; min < 12; ++min)
-		mvprintw(LINES - 3 - min, 1, "%d", 5 * (min+1));
+	for (int min = 0; min < GRAPH_ROWS; ++min)
+		mvprintw(LINES - 3 - min, 1, "%d", 5 * (min + 1));
 
-	for (int h = 0; h < 24; ++h) {
-		mvprintw(LINES - 1, 5 + col_w * h + 1, "%d", h);
+	for (int h = 0; h < GRAPH_COLS; ++h) {
+		mvprintw(LINES - 1, 5 + COLS_WIDTH * h + 1, "%d", h);
 	}
 
-	for (int i = 0; i < 24; ++i) {
-		int blocks = ceil((float)minutes_in_hour[i] / 5.0f);
-		for (int j = 1; j <= blocks; ++j) {
-			mvaddch(LINES - 2 - j, 5 + col_w * i + 1, '#');
+	struct tm *buf;
+	struct tm total = {0};
+
+	for (int i = 0; i < n; ++i) {
+		struct TimeRange *c = tr + i;
+
+		// TODO: Trim start/end of day correctly
+
+		buf = localtime(&c->start);
+
+		total.tm_mday -= buf->tm_mday;
+		total.tm_hour -= buf->tm_hour;
+		total.tm_min -= buf->tm_min;
+		total.tm_sec -= buf->tm_sec;
+		int start_offset = buf->tm_hour * GRAPH_ROWS + buf->tm_min / MINUTES_BLOCK;
+
+		buf = localtime(&c->end);
+
+		total.tm_mday += buf->tm_mday;
+		total.tm_hour += buf->tm_hour;
+		total.tm_min += buf->tm_min;
+		total.tm_sec += buf->tm_sec;
+
+		mktime(&total);
+
+		int end_offset = buf->tm_hour * GRAPH_ROWS + buf->tm_min / MINUTES_BLOCK;
+
+		for (int k = start_offset; k <= end_offset; ++k)
+			table[k / GRAPH_ROWS][k % GRAPH_ROWS] = 1;
+	}
+
+	time_t now = time(NULL);
+	buf = localtime(&now);
+	mvprintw(1, 1, "%d.%d.%d",buf->tm_mday,buf->tm_mon, buf->tm_year);
+	mvprintw(2, 1, "Total time worked: %dh %dm %ds",  total.tm_hour, total.tm_min,
+		 total.tm_sec);
+
+	for (int i = 0; i < GRAPH_COLS; ++i) {
+		for (int j = 0; j < GRAPH_ROWS; ++j) {
+			if (table[i][j] > 0)
+				mvaddch(LINES - 3 - j, 5 + COLS_WIDTH * i + 1, '#');
 		}
 	}
 

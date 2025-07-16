@@ -64,18 +64,19 @@ int hande_event(struct AppContext *context, enum UserInput input)
 		render_help();
 		break;
 	case GRAPH_INPUT: {
-		int graph[24] = {0};
-		if (db_get_time(graph))
+		struct TimeRange *tr;
+		size_t n = 0;
+		if (db_get_time(&tr, &n))
 			fprintf(stderr, "Error: Failed to get data from db\n");
 		*context->view = GRAPH_VIEW;
-		render_graph(graph);
+		render_graph(tr, n);
 		}
 		break;
 	case STOP_TIMER_INPUT:
 		timer_stop(context->timer);
-		if (db_save_time(context->timer)) // TODO: Consider move it from input listen loop?
-			fprintf(stderr,
-				"Error: Failed to store data into db\n");
+		 if (db_save_time(context->timer)) // TODO: Consider move it from listen loop?
+		 fprintf(stderr,
+		 	"Error: Failed to store data into db\n");
 		break;
 	case PAUSE_RESUME_TIMER_INPUT:
 		timer_pause(context->timer);

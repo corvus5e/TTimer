@@ -7,7 +7,7 @@ int db_init();
 
 int db_save_time(const struct Timer*);
 
-int db_get_time(TimeGraph out);
+int db_get_time(struct TimeRange **time_ranges, size_t *size);
 
 int db_dispose();
 

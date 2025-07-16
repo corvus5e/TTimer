@@ -12,7 +12,10 @@ struct Timer {
 	int total_paused_time_sec;
 };
 
-typedef int *TimeGraph;
+struct TimeRange {
+	time_t start;
+	time_t end;
+};
 
 void timer_init(struct Timer *ts);
 

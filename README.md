@@ -1,5 +1,5 @@
 # TTimer
-TTimer is a terminal timer
+TTimer is a terminal timer and time tracker
 
 ## TODO:
  - [x] flag for up/down count
@@ -7,6 +7,8 @@ TTimer is a terminal timer
  - [x] user intup commands/hotkeys
  - [x] logs time spend until closing
  - [ ] background animation
- - [ ] help windows
- - [ ] stats window
+ - [x] help windows
+ - [x] stats window
+ - [ ] user settings
+ - [ ] count down
 

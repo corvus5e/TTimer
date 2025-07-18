@@ -10,11 +10,16 @@ struct Texture {
 };
 
 enum UserInput {
-	STOP_TIMER_INPUT,
-	PAUSE_RESUME_TIMER_INPUT,
-	HELP_INPUT,
-	BACK_INPUT,
-	GRAPH_INPUT,
+	Q_KEY,
+	SPACE_KEY,
+	R_KEY,
+	H_KEY,
+	J_KEY,
+	K_KEY,
+	L_KEY,
+	ESC_KEY,
+	G_KEY,
+	UPDATE_INPUT,
 	IDLE_INPUT,
 };
 

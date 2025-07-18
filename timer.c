@@ -33,6 +33,9 @@ void timer_stop(struct Timer *ts)
 
 void timer_pause(struct Timer *ts)
 {
+	if(ts->stopped)
+		return;
+
 	if (!ts->paused) {
 		ts->last_resume_start = time(NULL);
 		ts->paused = 1;

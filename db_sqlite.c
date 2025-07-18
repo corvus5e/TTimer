@@ -93,24 +93,34 @@ int db_save_time(const struct Timer *timer)
 	return 0;
 }
 
-int db_get_time(struct TimeRange **time_ranges, size_t *size)
+int db_get_time(struct TimeRange **time_ranges, size_t *size, int day_shift)
 {
 	if(!_db) {
 		fprintf(stderr, "Error: db is NULL\n");
 		return -1;
 	}
 
-	//NOTE: Query today sessions for now
+	_time_ranges.size = 0;
+
+	time_t now = time(NULL);
+	struct tm *local_time = localtime(&now);
+
+	// Clear todays time
+	local_time->tm_sec = 0;
+	local_time->tm_min = 0;
+	local_time->tm_hour = 0;
+	local_time->tm_mday += day_shift;
+
+	time_t start = mktime(local_time);
+
+	local_time->tm_mday += 1;
+	time_t end = mktime(local_time);
+
 	char *query = sqlite3_mprintf("select start, end from tbl1 \
-			WHERE \
-			start >= unixepoch('now', 'start of day') AND \
-			start < unixepoch('now', 'start of day', '+1 day') \
-			OR \
-			end >= unixepoch('now', 'start of day') AND \
-			end < unixepoch('now', 'start of day', '+1 day');");
+			WHERE start >= %lu AND start < %lu OR end >= %lu AND end < %lu;",
+			start, end, start, end);
 
 	char *errmsg;
-
 	int status = sqlite3_exec(_db, query, callback, NULL, &errmsg);
 
 	sqlite3_free(query);
@@ -123,6 +133,15 @@ int db_get_time(struct TimeRange **time_ranges, size_t *size)
 
 	*time_ranges = &_time_ranges.data[0];
 	*size = _time_ranges.size;
+
+	// Trim do fit in one day
+	struct TimeRange *d = _time_ranges.data;
+	for(int i = 0; i < _time_ranges.size; ++i) {
+		if(d->start < start)
+			d->start = start;
+		if(d->end > end)
+			d->end = end;
+	}
 
 	return 0;
 }

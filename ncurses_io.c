@@ -78,12 +78,18 @@ void render_help()
 {
 	erase();
 	mvprintw(1, 5, "TTimer");
+	mvprintw(2, 5, "------");
 	mvprintw(3, 5, "'Space' - pause/resume timer");
 	mvprintw(3, 5, "'q'     - quit timer and save your time");
 	mvprintw(4, 5, "'Esc'   - back to timer");
 	mvprintw(5, 5, "'g'     - show time graph");
 	mvprintw(6, 5, "'h'     - show this help");
-	mvprintw(7, 5, "Window size: %d %d", LINES, COLS);
+	mvprintw(8, 5, "In graph view");
+	mvprintw(9, 5, "-------------");
+	mvprintw(10,5, "'h'     - switch 1 day backwards");
+	mvprintw(11,5, "'l'     - switch 1 day forward");
+	mvprintw(12,5, "'r'     - reset to today");
+	mvprintw(13,5, "Window size: %d %d", LINES, COLS);
 
 	refresh();
 }
@@ -102,7 +108,7 @@ void render_graph(struct TimeRange *tr, size_t n)
 	}
 
 	struct tm *buf;
-	struct tm total = {0};
+	long total = 0;
 
 	for (int i = 0; i < n; ++i) {
 		struct TimeRange *c = tr + i;
@@ -110,33 +116,31 @@ void render_graph(struct TimeRange *tr, size_t n)
 		// TODO: Trim start/end of day correctly
 
 		buf = localtime(&c->start);
-
-		total.tm_mday -= buf->tm_mday;
-		total.tm_hour -= buf->tm_hour;
-		total.tm_min -= buf->tm_min;
-		total.tm_sec -= buf->tm_sec;
 		int start_offset = buf->tm_hour * GRAPH_ROWS + buf->tm_min / MINUTES_BLOCK;
 
 		buf = localtime(&c->end);
-
-		total.tm_mday += buf->tm_mday;
-		total.tm_hour += buf->tm_hour;
-		total.tm_min += buf->tm_min;
-		total.tm_sec += buf->tm_sec;
-
-		mktime(&total);
-
 		int end_offset = buf->tm_hour * GRAPH_ROWS + buf->tm_min / MINUTES_BLOCK;
+
+		total += difftime(c->end, c->start);
 
 		for (int k = start_offset; k <= end_offset; ++k)
 			table[k / GRAPH_ROWS][k % GRAPH_ROWS] = 1;
 	}
 
-	time_t now = time(NULL);
-	buf = localtime(&now);
-	mvprintw(1, 1, "%d.%d.%d",buf->tm_mday,buf->tm_mon, buf->tm_year);
-	mvprintw(2, 1, "Total time worked: %dh %dm %ds",  total.tm_hour, total.tm_min,
-		 total.tm_sec);
+
+	if(tr && n > 0) {
+		buf = localtime(&tr->end);
+		mvprintw(1, 1, "%02d.%02d.%d",buf->tm_mday, buf->tm_mon, 1900 + buf->tm_year);
+	}
+	else
+		mvprintw(1, 1, "--.--.----");
+
+
+    	long hours = total/ 3600;
+    	long minutes = (total % 3600) / 60;
+    	long seconds = total % 60;
+
+	mvprintw(2, 1, "Total time worked: %luh %lum %lus",  hours, minutes, seconds);
 
 	for (int i = 0; i < GRAPH_COLS; ++i) {
 		for (int j = 0; j < GRAPH_ROWS; ++j) {
@@ -168,17 +172,25 @@ enum UserInput get_user_input()
 {
 	switch (getch()) {
 	case 'q':
-		return STOP_TIMER_INPUT;
+		return Q_KEY;
 	case 'h':
-		return HELP_INPUT;
+		return H_KEY;
+	case 'r':
+		return R_KEY;
+	case 'j':
+		return J_KEY;
+	case 'k':
+		return K_KEY;
+	case 'l':
+		return L_KEY;
 	case 'g':
-		return GRAPH_INPUT;
+		return G_KEY;
 	case ESC:
-		return BACK_INPUT;
+		return ESC_KEY;
 	case ' ':
-		return PAUSE_RESUME_TIMER_INPUT;
+		return SPACE_KEY;
 	case KEY_RESIZE:
-		return HELP_INPUT; // TODO: handle resize
+		return H_KEY; // TODO: handle resize
 	}
 
 	return IDLE_INPUT; // could be treated as use timer "tick"

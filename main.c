@@ -16,8 +16,8 @@ enum AppView { TIMER_VIEW, HELP_VIEW, GRAPH_VIEW};
 
 struct AppSettings {
 	int stopped_on_app_start;
-	int save_min_seconds;
-};
+	int min_seconds_to_save;
+} _settings;
 
 struct AppContext {
 	struct Timer *timer;
@@ -27,16 +27,12 @@ struct AppContext {
 
 int handle_input_graph_view(struct AppContext *context, enum UserInput);
 int handle_input_timer_view(struct AppContext *context, enum UserInput);
-int handle_input_help_view(struct AppContext *context, enum UserInput);
+int handle_input_help_view (struct AppContext *context, enum UserInput);
 
-int main(int argc, char *argv[])
+int main(void)
 {
-	int secs = 0;
-	if (argc < 2 || (secs = atoi(argv[1])) <= 0)
-		secs = 60;
-
-	struct AppSettings settings;
-	settings.stopped_on_app_start = 1;
+	_settings.stopped_on_app_start = 1;
+	_settings.min_seconds_to_save = 0;
 
 	render_init();
 
@@ -46,15 +42,15 @@ int main(int argc, char *argv[])
 	}
 
 	struct Timer timer;
-
-	timer_init(&timer);
+	timer_reset(&timer);
 
 	struct AppContext context;
 	context.timer = &timer;
 	context.view = TIMER_VIEW;
 	context.day_shift = 0;
 
-	timer_start(&timer);
+	if(!_settings.stopped_on_app_start)
+		timer_start(&timer);
 
 	enum UserInput input = UPDATE_INPUT;
 
@@ -130,11 +126,14 @@ int handle_input_timer_view(struct AppContext *context, enum UserInput input) {
 		context->view = GRAPH_VIEW;
 		return handle_input_graph_view(context, UPDATE_INPUT);
 	case SPACE_KEY:
-		timer_pause(context->timer);
+		if (context->timer->stopped)
+			timer_start(context->timer);
+		else
+			timer_pause(context->timer);
 		break;
 	case Q_KEY:
 		timer_stop(context->timer);
-		if (db_save_time(context->timer)) // TODO: Consider move it from listen loop?
+		if (db_save_time(context->timer))
 			fprintf(stderr, "Error: Failed to store data into db\n");
 		return EXIT_APP;
 	case UPDATE_INPUT:

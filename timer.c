@@ -2,9 +2,9 @@
 
 #include <unistd.h>
 
-void timer_init(struct Timer *ts)
+void timer_reset(struct Timer *ts)
 {
-	ts->stopped = 0;
+	ts->stopped = 1;
 	ts->paused = 0;
 	ts->start = 0;
 	ts->time_elapsed_sec = 0;
@@ -22,8 +22,12 @@ void timer_update(struct Timer *ts)
 
 void timer_start(struct Timer *ts)
 {
+	if(!ts->stopped)
+		return;
+
+	timer_reset(ts);
 	ts->start = time(NULL);
-	ts->time_elapsed_sec = 0;
+	ts->stopped = 0;
 }
 
 void timer_stop(struct Timer *ts)

@@ -78,6 +78,11 @@ void render_timer(const struct Timer*ts)
 		 	mvaddch(i, COLS - 4, '|');
 		 }
 
+		 mvaddch(2, 3, '*');
+		 mvaddch(2, COLS - 4, '*');
+		 mvaddch(LINES - 3 , 3, '*');
+		 mvaddch(LINES - 3, COLS - 4, '*');
+
 		mvprintw(LINES - 4, 4, "Paused");
 	}
 

@@ -17,7 +17,7 @@ struct TimeRange {
 	time_t end;
 };
 
-void timer_init(struct Timer *ts);
+void timer_reset(struct Timer *ts);
 
 void timer_update(struct Timer *ts);
 

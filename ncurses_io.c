@@ -68,7 +68,17 @@ void render_timer(const struct Timer*ts)
 	}
 
 	if (ts->paused) {
-		mvprintw(LINES - 1, 0, "Paused");
+		for (int i = 4; i < COLS-4; ++i) {
+			mvaddch(2, i, '-');
+			mvaddch(LINES - 3, i, '-');
+		}
+
+		 for (int i = 3; i < LINES - 3; ++i) {
+		 	mvaddch(i, 3, '|');
+		 	mvaddch(i, COLS - 4, '|');
+		 }
+
+		mvprintw(LINES - 4, 4, "Paused");
 	}
 
 	refresh();

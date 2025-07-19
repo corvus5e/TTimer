@@ -10,7 +10,14 @@
 #include "db.h"
 #include "timer.h"
 
+#define EXIT_APP 1
+
 enum AppView { TIMER_VIEW, HELP_VIEW, GRAPH_VIEW};
+
+struct AppSettings {
+	int stopped_on_app_start;
+	int save_min_seconds;
+};
 
 struct AppContext {
 	struct Timer *timer;
@@ -27,6 +34,9 @@ int main(int argc, char *argv[])
 	int secs = 0;
 	if (argc < 2 || (secs = atoi(argv[1])) <= 0)
 		secs = 60;
+
+	struct AppSettings settings;
+	settings.stopped_on_app_start = 1;
 
 	render_init();
 
@@ -46,22 +56,25 @@ int main(int argc, char *argv[])
 
 	timer_start(&timer);
 
-	// Render first to appear immediately
-	render_timer(&timer);
+	enum UserInput input = UPDATE_INPUT;
 
-	while (!timer.stopped) {
-		enum UserInput input = get_user_input();
+	for (int status;;) {
 		switch (context.view) {
 		case TIMER_VIEW:
-			handle_input_timer_view(&context, input);
+			status = handle_input_timer_view(&context, input);
 			break;
 		case HELP_VIEW:
-			handle_input_help_view(&context, input);
+			status = handle_input_help_view(&context, input);
 			break;
 		case GRAPH_VIEW:
-			handle_input_graph_view(&context, input);
+			status = handle_input_graph_view(&context, input);
 			break;
 		}
+
+		if (status == EXIT_APP)
+			break;
+
+		input = get_user_input();
 	}
 
 	render_dispose();
@@ -123,7 +136,7 @@ int handle_input_timer_view(struct AppContext *context, enum UserInput input) {
 		timer_stop(context->timer);
 		if (db_save_time(context->timer)) // TODO: Consider move it from listen loop?
 			fprintf(stderr, "Error: Failed to store data into db\n");
-		break;
+		return EXIT_APP;
 	case UPDATE_INPUT:
 	case IDLE_INPUT:
 		timer_update(context->timer);

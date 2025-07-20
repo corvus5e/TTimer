@@ -167,6 +167,15 @@ void render_graph(struct TimeInterval *tr, size_t n)
 	refresh();
 }
 
+void render_settings(const struct AppSettings *s) {
+	erase();
+	mvprintw(1, 3, "Settings");
+	mvprintw(2, 3, "--------");
+	mvprintw(3, 3, "Stopped on app start: %s\n", s->stopped_on_app_start ? "ON" : "OFF");
+	mvprintw(4, 3, "Minimus seconds to save: %d\n", s->min_seconds_to_save);
+	refresh();
+}
+
 void render_dispose()
 {
 	timeout(-1);
@@ -200,6 +209,8 @@ enum UserInput get_user_input()
 		return L_KEY;
 	case 'g':
 		return G_KEY;
+	case 's':
+		return S_KEY;
 	case ESC:
 		return ESC_KEY;
 	case ' ':

@@ -9,15 +9,13 @@
 #include "io.h"
 #include "db.h"
 #include "timer.h"
+#include "settings.h"
 
 #define EXIT_APP 1
 
-enum AppView { TIMER_VIEW, HELP_VIEW, GRAPH_VIEW};
+enum AppView { TIMER_VIEW, HELP_VIEW, GRAPH_VIEW, SETTINGS_VIEW};
 
-struct AppSettings {
-	int stopped_on_app_start;
-	int min_seconds_to_save;
-} _settings;
+struct AppSettings _settings;
 
 struct AppContext {
 	struct Timer *timer;
@@ -27,7 +25,8 @@ struct AppContext {
 
 int handle_input_graph_view(struct AppContext *context, enum UserInput);
 int handle_input_timer_view(struct AppContext *context, enum UserInput);
-int handle_input_help_view (struct AppContext *context, enum UserInput);
+int handle_input_help_view(struct AppContext *context, enum UserInput);
+int handle_input_settings_view (struct AppContext *context, enum UserInput);
 
 /* Saves time if last active interval is valid (timer is paused or stopped)
  * And interval is not zero */
@@ -36,7 +35,7 @@ int save_active_inteval_time(struct Timer*);
 int main(void)
 {
 	_settings.stopped_on_app_start = 1;
-	_settings.min_seconds_to_save = 0;
+	_settings.min_seconds_to_save = 30;
 
 	render_init();
 
@@ -68,6 +67,9 @@ int main(void)
 			break;
 		case GRAPH_VIEW:
 			status = handle_input_graph_view(&context, input);
+			break;
+		case SETTINGS_VIEW:
+			status = handle_input_settings_view(&context, input);
 			break;
 		}
 
@@ -129,6 +131,9 @@ int handle_input_timer_view(struct AppContext *context, enum UserInput input) {
 	case G_KEY:
 		context->view = GRAPH_VIEW;
 		return handle_input_graph_view(context, UPDATE_INPUT);
+	case S_KEY:
+		context->view = SETTINGS_VIEW;
+		return handle_input_settings_view(context, UPDATE_INPUT);
 	case SPACE_KEY:
 		if (context->timer->stopped) {
 			timer_start(context->timer);
@@ -181,6 +186,24 @@ int handle_input_help_view(struct AppContext *context, enum UserInput input) {
 	return 0;
 }
 
+int handle_input_settings_view (struct AppContext *context, enum UserInput input) {
+	switch (input) {
+	case Q_KEY:
+		context->view = TIMER_VIEW;
+		return handle_input_timer_view(context, Q_KEY);
+	case ESC_KEY:
+		context->view = TIMER_VIEW;
+		return handle_input_timer_view(context, IDLE_INPUT);
+	case UPDATE_INPUT:
+		render_settings(&_settings);
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
 int save_active_inteval_time(struct Timer* timer) {
 	if(timer->start == 0) /* Timer has not been even started */
 		return 1;
@@ -193,7 +216,7 @@ int save_active_inteval_time(struct Timer* timer) {
 
 	struct TimeInterval ti = timer->last_active_interval;
 
-	if(difftime(ti.end, ti.start) <= 0) /* Active time interval incorrect or too small */
+	if(difftime(ti.end, ti.start) <= _settings.min_seconds_to_save) /* Active time interval incorrect or too small */
 		return 1;
 
 	return db_save_time(timer->last_active_interval);

@@ -100,13 +100,14 @@ void render_help()
 	mvprintw(3, 5, "'q'     - quit timer and save your time");
 	mvprintw(4, 5, "'Esc'   - back to timer");
 	mvprintw(5, 5, "'g'     - show time graph");
-	mvprintw(6, 5, "'h'     - show this help");
-	mvprintw(8, 5, "In graph view");
-	mvprintw(9, 5, "-------------");
-	mvprintw(10,5, "'h'     - switch 1 day backwards");
-	mvprintw(11,5, "'l'     - switch 1 day forward");
-	mvprintw(12,5, "'r'     - reset to today");
-	mvprintw(13,5, "Window size: %d %d", LINES, COLS);
+	mvprintw(6, 5, "'s'     - show settings");
+	mvprintw(7, 5, "'h'     - show this help");
+	mvprintw(9, 5, "In graph view");
+	mvprintw(10, 5, "-------------");
+	mvprintw(11,5, "'h'     - switch 1 day backwards");
+	mvprintw(12,5, "'l'     - switch 1 day forward");
+	mvprintw(13,5, "'r'     - reset to today");
+	mvprintw(14,5, "Window size: %d %d", LINES, COLS);
 
 	refresh();
 }

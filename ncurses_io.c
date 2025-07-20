@@ -84,6 +84,8 @@ void render_timer(const struct Timer*ts)
 		 mvaddch(LINES - 3, COLS - 4, '*');
 
 		mvprintw(LINES - 4, 4, "Paused");
+	} else if (ts->stopped && ts->time_elapsed_sec == 0 /*Initial start*/) {
+		mvprintw(LINES - 4, 4, "Press space to start");
 	}
 
 	refresh();

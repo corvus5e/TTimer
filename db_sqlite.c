@@ -30,6 +30,11 @@ static int callback(void *arg, int argc, char **argv, char **azColName)
 		return -1;
 	}
 
+	if(_time_ranges.size >= MAX_RANGES_PER_DAY) {
+		fprintf(stderr, "Error in db: Query result exceeded TimeRangeArray size\n");
+		return -1;
+	}
+
 	_time_ranges.data[_time_ranges.size].start = (time_t)atoi(argv[0]);
 	_time_ranges.data[_time_ranges.size].end = (time_t)atoi(argv[1]);
 	_time_ranges.size++;

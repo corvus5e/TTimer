@@ -41,9 +41,9 @@ void render_timer(const struct Timer*ts)
 	char buf[BUF_LEN];
 	int len = 0;
 
-	int seconds = ts->time_elapsed_sec % 60;
-	int minutes = (ts->time_elapsed_sec / 60) % 60;
-	int hours = ts->time_elapsed_sec / 3600;
+	int seconds = ts->active_elapsed_time % 60;
+	int minutes = (ts->active_elapsed_time / 60) % 60;
+	int hours = ts->active_elapsed_time / 3600;
 
 	if ((len = snprintf(&buf[0], BUF_LEN, "%02d:%02d:%02d", hours, minutes, seconds)) < 0)
 		return;
@@ -84,7 +84,7 @@ void render_timer(const struct Timer*ts)
 		 mvaddch(LINES - 3, COLS - 4, '*');
 
 		mvprintw(LINES - 4, 4, "Paused");
-	} else if (ts->stopped && ts->time_elapsed_sec == 0 /*Initial start*/) {
+	} else if (ts->stopped && ts->active_elapsed_time == 0 /*Initial start*/) {
 		mvprintw(LINES - 4, 4, "Press space to start");
 	}
 
@@ -111,7 +111,7 @@ void render_help()
 	refresh();
 }
 
-void render_graph(struct TimeRange *tr, size_t n)
+void render_graph(struct TimeInterval *tr, size_t n)
 {
 	erase();
 
@@ -128,9 +128,7 @@ void render_graph(struct TimeRange *tr, size_t n)
 	long total = 0;
 
 	for (int i = 0; i < n; ++i) {
-		struct TimeRange *c = tr + i;
-
-		// TODO: Trim start/end of day correctly
+		struct TimeInterval *c = tr + i;
 
 		buf = localtime(&c->start);
 		int start_offset = buf->tm_hour * GRAPH_ROWS + buf->tm_min / MINUTES_BLOCK;

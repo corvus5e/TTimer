@@ -3,18 +3,18 @@
 
 #include <time.h>
 
+struct TimeInterval {
+	time_t start;
+	time_t end;
+};
+
 struct Timer {
 	int stopped;
 	int paused;
 	time_t start;
-	int time_elapsed_sec;
-	time_t last_resume_start;
+	int active_elapsed_time;
 	int total_paused_time_sec;
-};
-
-struct TimeRange {
-	time_t start;
-	time_t end;
+	struct TimeInterval last_active_interval;
 };
 
 void timer_reset(struct Timer *ts);

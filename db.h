@@ -5,9 +5,9 @@
 
 int db_init();
 
-int db_save_time(const struct Timer*);
+int db_save_time(const struct TimeInterval);
 
-int db_get_time(struct TimeRange **time_ranges, size_t *size, int day_from_today);
+int db_get_time(struct TimeInterval **time_ranges, size_t *size, int day_from_today);
 
 int db_dispose();
 

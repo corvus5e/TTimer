@@ -17,7 +17,7 @@
 static sqlite3 *_db;
 
 struct TimeRangeArray {
-	struct TimeRange data[MAX_RANGES_PER_DAY];
+	struct TimeInterval data[MAX_RANGES_PER_DAY];
 	size_t size;
 };
 
@@ -71,7 +71,7 @@ int db_dispose()
 	return 0;
 }
 
-int db_save_time(const struct Timer *timer)
+int db_save_time(const struct TimeInterval ti)
 {
 	if(!_db) {
 		fprintf(stderr, "Error: db is NULL\n");
@@ -80,8 +80,7 @@ int db_save_time(const struct Timer *timer)
 
 	char *query = sqlite3_mprintf("insert into tbl1 (start, end) \
 			values\
-			(%lu, %lu);", timer->start,
-			timer->start + timer->time_elapsed_sec - timer->total_paused_time_sec);
+			(%lu, %lu);", ti.start, ti.end);
 
 	char *errmsg;
 
@@ -98,7 +97,7 @@ int db_save_time(const struct Timer *timer)
 	return 0;
 }
 
-int db_get_time(struct TimeRange **time_ranges, size_t *size, int day_shift)
+int db_get_time(struct TimeInterval **time_ranges, size_t *size, int day_shift)
 {
 	if(!_db) {
 		fprintf(stderr, "Error: db is NULL\n");
@@ -140,7 +139,7 @@ int db_get_time(struct TimeRange **time_ranges, size_t *size, int day_shift)
 	*size = _time_ranges.size;
 
 	// Trim do fit in one day
-	struct TimeRange *d = _time_ranges.data;
+	struct TimeInterval *d = _time_ranges.data;
 	for(int i = 0; i < _time_ranges.size; ++i) {
 		if(d->start < start)
 			d->start = start;

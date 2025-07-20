@@ -29,6 +29,10 @@ int handle_input_graph_view(struct AppContext *context, enum UserInput);
 int handle_input_timer_view(struct AppContext *context, enum UserInput);
 int handle_input_help_view (struct AppContext *context, enum UserInput);
 
+/* Saves time if last active interval is valid (timer is paused or stopped)
+ * And interval is not zero */
+int save_active_inteval_time(struct Timer*);
+
 int main(void)
 {
 	_settings.stopped_on_app_start = 1;
@@ -105,7 +109,7 @@ int handle_input_graph_view(struct AppContext *context, enum UserInput input) {
 	}
 	switch(input) {
 	case UPDATE_INPUT:
-		struct TimeRange *tr;
+		struct TimeInterval *tr;
 		size_t n = 0;
 		if (db_get_time(&tr, &n, context->day_shift))
 			fprintf(stderr, "Error: Failed to get data from db\n");
@@ -126,15 +130,16 @@ int handle_input_timer_view(struct AppContext *context, enum UserInput input) {
 		context->view = GRAPH_VIEW;
 		return handle_input_graph_view(context, UPDATE_INPUT);
 	case SPACE_KEY:
-		if (context->timer->stopped)
+		if (context->timer->stopped) {
 			timer_start(context->timer);
-		else
+		} else {
 			timer_pause(context->timer);
+			save_active_inteval_time(context->timer);
+		}
 		break;
 	case Q_KEY:
 		timer_stop(context->timer);
-		if (db_save_time(context->timer))
-			fprintf(stderr, "Error: Failed to store data into db\n");
+		save_active_inteval_time(context->timer);
 		return EXIT_APP;
 	case UPDATE_INPUT:
 	case IDLE_INPUT:
@@ -174,5 +179,23 @@ int handle_input_help_view(struct AppContext *context, enum UserInput input) {
 	}
 
 	return 0;
+}
+
+int save_active_inteval_time(struct Timer* timer) {
+	if(timer->start == 0) /* Timer has not been even started */
+		return 1;
+
+	/* If both paused and stopped true, then it was stopped from paused state, and 
+	   last active interval already saved
+	   If both paused and stopped false, then active interval is not finished yet */
+	if(timer->paused == timer->stopped) 
+		return 1;
+
+	struct TimeInterval ti = timer->last_active_interval;
+
+	if(difftime(ti.end, ti.start) <= 0) /* Active time interval incorrect or too small */
+		return 1;
+
+	return db_save_time(timer->last_active_interval);
 }
 

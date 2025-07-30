@@ -56,3 +56,25 @@ void timer_pause(struct Timer *ts)
 		ts->paused = 0;
 	}
 }
+
+struct TimeInterval get_day_interval(time_t time, int day_shift)
+{
+	struct tm *local_time = localtime(&time);
+
+	// Clear todays time
+	local_time->tm_sec = 0;
+	local_time->tm_min = 0;
+	local_time->tm_hour = 0;
+	local_time->tm_mday += day_shift;
+
+	time_t start = mktime(local_time);
+
+	local_time->tm_mday += 1;
+	time_t end = mktime(local_time);
+
+	struct TimeInterval day_interval;
+	day_interval.start = start;
+	day_interval.end = end;
+
+	return day_interval;
+}

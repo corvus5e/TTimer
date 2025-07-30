@@ -27,4 +27,11 @@ void timer_stop(struct Timer *ts);
 
 void timer_pause(struct Timer *ts);
 
+/* Returns start and end of the day in which time takes place.
+*  Returns local time.
+*  time is shifted dy day_shift.
+*  Example: If day_shift is -1, returns start and end of the day before time's day
+*/
+struct TimeInterval get_day_interval(time_t time, int day_shift);
+
 #endif

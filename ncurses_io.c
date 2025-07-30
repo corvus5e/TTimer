@@ -112,7 +112,7 @@ void render_help()
 	refresh();
 }
 
-void render_graph(struct TimeInterval *tr, size_t n)
+void render_graph(struct TimeInterval day_interval, struct TimeInterval *tr, size_t n)
 {
 	erase();
 
@@ -144,12 +144,8 @@ void render_graph(struct TimeInterval *tr, size_t n)
 	}
 
 
-	if(tr && n > 0) {
-		buf = localtime(&tr->end);
-		mvprintw(1, 1, "%02d.%02d.%d",buf->tm_mday, buf->tm_mon, 1900 + buf->tm_year);
-	}
-	else
-		mvprintw(1, 1, "--.--.----");
+	buf = localtime(&day_interval.start); // Get date
+	mvprintw(1, 1, "%02d.%02d.%d",buf->tm_mday, buf->tm_mon + 1, 1900 + buf->tm_year);
 
 
     	long hours = total/ 3600;

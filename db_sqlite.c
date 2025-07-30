@@ -97,7 +97,7 @@ int db_save_time(const struct TimeInterval ti)
 	return 0;
 }
 
-int db_get_time(struct TimeInterval **time_ranges, size_t *size, int day_shift)
+int db_get_time(struct TimeInterval interval, struct TimeInterval **time_ranges, size_t *size)
 {
 	if(!_db) {
 		fprintf(stderr, "Error: db is NULL\n");
@@ -106,19 +106,8 @@ int db_get_time(struct TimeInterval **time_ranges, size_t *size, int day_shift)
 
 	_time_ranges.size = 0;
 
-	time_t now = time(NULL);
-	struct tm *local_time = localtime(&now);
-
-	// Clear todays time
-	local_time->tm_sec = 0;
-	local_time->tm_min = 0;
-	local_time->tm_hour = 0;
-	local_time->tm_mday += day_shift;
-
-	time_t start = mktime(local_time);
-
-	local_time->tm_mday += 1;
-	time_t end = mktime(local_time);
+	time_t start = interval.start;
+	time_t end = interval.end;
 
 	char *query = sqlite3_mprintf("select start, end from tbl1 \
 			WHERE start >= %lu AND start < %lu OR end >= %lu AND end < %lu;",

@@ -31,7 +31,7 @@ void render_timer(const struct Timer *);
 
 void render_help();
 
-void render_graph(struct TimeInterval *, size_t);
+void render_graph(struct TimeInterval scope, struct TimeInterval *, size_t);
 
 void render_settings(const struct AppSettings *);
 

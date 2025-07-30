@@ -111,11 +111,14 @@ int handle_input_graph_view(struct AppContext *context, enum UserInput input) {
 	}
 	switch(input) {
 	case UPDATE_INPUT:
-		struct TimeInterval *tr;
+		;
+		struct TimeInterval *recorder_intervals;
 		size_t n = 0;
-		if (db_get_time(&tr, &n, context->day_shift))
+		struct TimeInterval day_interval =
+		    get_day_interval(time(NULL), context->day_shift);
+		if (db_get_time(day_interval, &recorder_intervals, &n))
 			fprintf(stderr, "Error: Failed to get data from db\n");
-		render_graph(tr, n);
+		render_graph(day_interval, recorder_intervals, n);
 	default:
 		break;
 	}

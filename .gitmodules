@@ -1,0 +1,3 @@
+[submodule "HomeTUI"]
+	path = HomeTUI
+	url = https://github.com/corvus5e/HomeTUI

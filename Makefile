@@ -1,8 +1,8 @@
-src=main.c timer.c textures.c ncurses_io.c db_sqlite.c
+src=main.c timer.c textures.c draw.c HomeTUI/ncurses_io.c db_sqlite.c
 target=ttimer
 
 main: libsqlite3.a
-	gcc -std=c11 -Wall $(src) -lncurses -lm -L. -lsqlite3 -o $(target)
+	gcc -std=c11 -g -Wall $(src) -lncurses -lm -L. -lsqlite3 -o $(target)
 
 sqlite3.o:
 	gcc -c -std=c11 -Wall sqlite3/sqlite3.c -o sqlite3.o

@@ -6,12 +6,15 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "io.h"
+#include "HomeTUI/home_tui.h"
+#include "draw.h"
 #include "db.h"
 #include "timer.h"
 #include "settings.h"
 
 #define EXIT_APP 1
+#define UPDATE_INPUT 512
+#define IDLE_INPUT -1 //TODO: Put into HomeTUI
 
 enum AppView { TIMER_VIEW, HELP_VIEW, GRAPH_VIEW, SETTINGS_VIEW};
 
@@ -23,10 +26,10 @@ struct AppContext {
 	int day_shift;
 };
 
-int handle_input_graph_view(struct AppContext *context, enum UserInput);
-int handle_input_timer_view(struct AppContext *context, enum UserInput);
-int handle_input_help_view(struct AppContext *context, enum UserInput);
-int handle_input_settings_view (struct AppContext *context, enum UserInput);
+int handle_input_graph_view(struct AppContext *context, int input_key);
+int handle_input_timer_view(struct AppContext *context, int input_key);
+int handle_input_help_view(struct AppContext *context, int input_key);
+int handle_input_settings_view (struct AppContext *context, int input_key);
 
 /* Saves time if last active interval is valid (timer is paused or stopped)
  * And interval is not zero */
@@ -37,7 +40,7 @@ int main(void)
 	_settings.stopped_on_app_start = 1;
 	_settings.min_seconds_to_save = 30;
 
-	render_init();
+	render_init(1000);
 
 	if(db_init() != 0) {
 		fprintf(stderr, "Failed to initialize db\n");
@@ -47,36 +50,37 @@ int main(void)
 	struct Timer timer;
 	timer_reset(&timer);
 
-	struct AppContext context;
-	context.timer = &timer;
-	context.view = TIMER_VIEW;
-	context.day_shift = 0;
+	struct AppContext cxt;
+	cxt.timer = &timer;
+	cxt.view = TIMER_VIEW;
+	cxt.day_shift = 0;
 
 	if(!_settings.stopped_on_app_start)
 		timer_start(&timer);
 
-	enum UserInput input = UPDATE_INPUT;
+	int input = UPDATE_INPUT;
 
 	for (int status;;) {
-		switch (context.view) {
+		switch (cxt.view) {
 		case TIMER_VIEW:
-			status = handle_input_timer_view(&context, input);
+			status = handle_input_timer_view(&cxt, input);
 			break;
 		case HELP_VIEW:
-			status = handle_input_help_view(&context, input);
+			status = handle_input_help_view(&cxt, input);
 			break;
 		case GRAPH_VIEW:
-			status = handle_input_graph_view(&context, input);
+			status = handle_input_graph_view(&cxt, input);
 			break;
 		case SETTINGS_VIEW:
-			status = handle_input_settings_view(&context, input);
+			status = handle_input_settings_view(&cxt, input);
 			break;
 		}
 
 		if (status == EXIT_APP)
 			break;
 
-		input = get_user_input();
+		input = get_keyboard_input();
+		//TODO: handle resize
 	}
 
 	render_dispose();
@@ -86,99 +90,97 @@ int main(void)
 	return 0;
 }
 
-int handle_input_graph_view(struct AppContext *context, enum UserInput input) {
+int handle_input_graph_view(struct AppContext *ctx, int input) {
 	switch (input) {
-	case ESC_KEY:
-		context->view = TIMER_VIEW;
-		return handle_input_timer_view(context, UPDATE_INPUT);
-	case Q_KEY:
-		context->view = TIMER_VIEW;
-		return handle_input_timer_view(context, Q_KEY);
-	case R_KEY:
-		context->day_shift = 0;
+	case ESC:
+		ctx->view = TIMER_VIEW;
+		return handle_input_timer_view(ctx, UPDATE_INPUT);
+	case 'q':
+		ctx->view = TIMER_VIEW;
+		return handle_input_timer_view(ctx, input);
+	case 'r':
+		ctx->day_shift = 0;
 		input = UPDATE_INPUT;
 		break;
-	case H_KEY:
-		context->day_shift -= 1;
+	case 'h':
+		ctx->day_shift -= 1;
 		input = UPDATE_INPUT;
 		break;
-	case L_KEY:
-		context->day_shift += 1;
+	case 'l':
+		ctx->day_shift += 1;
 		input = UPDATE_INPUT;
 		break;
 	default:
 		break;
 	}
-	switch(input) {
-	case UPDATE_INPUT:
-		;
+
+	if(input == UPDATE_INPUT) {
 		struct TimeInterval *recorder_intervals;
 		size_t n = 0;
-		struct TimeInterval day_interval =
-		    get_day_interval(time(NULL), context->day_shift);
+		struct TimeInterval day_interval = get_day_interval(time(NULL), ctx->day_shift);
 		if (db_get_time(day_interval, &recorder_intervals, &n))
 			fprintf(stderr, "Error: Failed to get data from db\n");
 		render_graph(day_interval, recorder_intervals, n);
-	default:
-		break;
 	}
 
 	return 0;
 }
 
-int handle_input_timer_view(struct AppContext *context, enum UserInput input) {
+int handle_input_timer_view(struct AppContext *ctx, int input) {
 	switch (input) {
-	case H_KEY:
-		context->view = HELP_VIEW;
-		return handle_input_help_view(context, UPDATE_INPUT);
-	case G_KEY:
-		context->view = GRAPH_VIEW;
-		return handle_input_graph_view(context, UPDATE_INPUT);
-	case S_KEY:
-		context->view = SETTINGS_VIEW;
-		return handle_input_settings_view(context, UPDATE_INPUT);
-	case SPACE_KEY:
-		if (context->timer->stopped) {
-			timer_start(context->timer);
+	case 'h':
+		ctx->view = HELP_VIEW;
+		return handle_input_help_view(ctx, UPDATE_INPUT);
+	case 'g':
+		ctx->view = GRAPH_VIEW;
+		return handle_input_graph_view(ctx, UPDATE_INPUT);
+	case 's':
+		ctx->view = SETTINGS_VIEW;
+		return handle_input_settings_view(ctx, UPDATE_INPUT);
+	case ' ':
+		if (ctx->timer->stopped) {
+			timer_start(ctx->timer);
 		} else {
-			timer_pause(context->timer);
-			save_active_inteval_time(context->timer);
+			timer_pause(ctx->timer);
+			save_active_inteval_time(ctx->timer);
 		}
 		break;
-	case Q_KEY:
-		timer_stop(context->timer);
-		save_active_inteval_time(context->timer);
+	case 'q':
+		timer_stop(ctx->timer);
+		save_active_inteval_time(ctx->timer);
 		return EXIT_APP;
 	case UPDATE_INPUT:
 	case IDLE_INPUT:
-		timer_update(context->timer);
+		timer_update(ctx->timer);
 		break;
 	default:
 		break;
 	}
 
-	render_timer(context->timer);
+	int w, h;
+	get_window_size(&w, &h);
+	render_timer(ctx->timer, (w - 48) / 2, (h - 7) / 2); //TODO: Do something with it :)
 
 	return 0;
 }
 
-int handle_input_help_view(struct AppContext *context, enum UserInput input) {
+int handle_input_help_view(struct AppContext *ctx, int input) {
 	switch (input) {
-	case H_KEY:
-		context->day_shift -= 1;
+	case 'h':
+		ctx->day_shift -= 1;
 		break;
-	case L_KEY:
-		context->day_shift += 1;
+	case 'l':
+		ctx->day_shift += 1;
 		break;
-	case G_KEY:
-		context->view = GRAPH_VIEW;
-		return handle_input_graph_view(context, UPDATE_INPUT);
-	case ESC_KEY:
-		context->view = TIMER_VIEW;
-		return handle_input_timer_view(context, IDLE_INPUT);
-	case Q_KEY:
-		context->view = TIMER_VIEW;
-		return handle_input_timer_view(context, Q_KEY);
+	case 'g':
+		ctx->view = GRAPH_VIEW;
+		return handle_input_graph_view(ctx, UPDATE_INPUT);
+	case ESC:
+		ctx->view = TIMER_VIEW;
+		return handle_input_timer_view(ctx, IDLE_INPUT);
+	case 'q':
+		ctx->view = TIMER_VIEW;
+		return handle_input_timer_view(ctx, input);
 	case UPDATE_INPUT:
 		render_help();
 		break;
@@ -189,14 +191,14 @@ int handle_input_help_view(struct AppContext *context, enum UserInput input) {
 	return 0;
 }
 
-int handle_input_settings_view (struct AppContext *context, enum UserInput input) {
+int handle_input_settings_view (struct AppContext *ctx, int input) {
 	switch (input) {
-	case Q_KEY:
-		context->view = TIMER_VIEW;
-		return handle_input_timer_view(context, Q_KEY);
-	case ESC_KEY:
-		context->view = TIMER_VIEW;
-		return handle_input_timer_view(context, IDLE_INPUT);
+	case 'q':
+		ctx->view = TIMER_VIEW;
+		return handle_input_timer_view(ctx, input);
+	case ESC:
+		ctx->view = TIMER_VIEW;
+		return handle_input_timer_view(ctx, IDLE_INPUT);
 	case UPDATE_INPUT:
 		render_settings(&_settings);
 		break;

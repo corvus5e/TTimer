@@ -165,11 +165,18 @@ void render_graph(struct TimeInterval day_interval, struct TimeInterval *tr, siz
 
 void render_settings(const struct AppSettings *s)
 {
-	render_clear();
-	render_text(3, 1, "Settings");
-	render_text(3, 2, "--------");
-	render_ftext(3, 3, "Stopped on app start: %s\n", s->stopped_on_app_start ? "ON" : "OFF");
-	render_ftext(3, 4, "Minimus seconds to save: %d\n", s->min_seconds_to_save);
-	render_update();
+	struct ui *ui = ui_create();
+	ui_add_label(ui, 3, 1, 9, 2, "Settings");
+	ui_add_label(ui, 3, 5, 21, 2, "Stopped on app start");
+	ui_add_checkbox(ui, 26, 5, 1, NULL);
+
+	ui_render(ui);
+
+	int i = 0;
+	while(i != ESC) {
+		//TODO: Make input sync for this view
+		ui_process_input(ui, (i = get_keyboard_input()));
+		ui_render(ui);
+	}
 }
 

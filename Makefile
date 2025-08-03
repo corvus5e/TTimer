@@ -1,4 +1,4 @@
-src=main.c timer.c textures.c draw.c HomeTUI/ncurses_io.c db_sqlite.c
+src=main.c timer.c textures.c draw.c HomeTUI/ncurses_io.c HomeTUI/home_tui.c db_sqlite.c
 target=ttimer
 
 main: libsqlite3.a

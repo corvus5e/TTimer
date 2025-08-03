@@ -196,12 +196,11 @@ int handle_input_settings_view (struct AppContext *ctx, int input) {
 	case 'q':
 		ctx->view = TIMER_VIEW;
 		return handle_input_timer_view(ctx, input);
+	case UPDATE_INPUT:
+		render_settings(&_settings);
 	case ESC:
 		ctx->view = TIMER_VIEW;
 		return handle_input_timer_view(ctx, IDLE_INPUT);
-	case UPDATE_INPUT:
-		render_settings(&_settings);
-		break;
 	default:
 		break;
 	}

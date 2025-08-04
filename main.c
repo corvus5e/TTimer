@@ -38,6 +38,7 @@ int save_active_inteval_time(struct Timer*);
 int main(void)
 {
 	_settings.stopped_on_app_start = 1;
+	_settings.stop_after_min = -1; // Do not stop at all
 	_settings.min_seconds_to_save = 30;
 
 	render_init(1000);

@@ -22,11 +22,6 @@
 
 extern const struct Texture _textures[];
 
-static int in_settings_window = 1;
-
-void onCancellSettings(struct ui_button *b) { in_settings_window = 0; }
-void onSaveSettings(struct ui_button *b) { in_settings_window = 0; };
-
 void render_timer(const struct Timer *ts, int x, int y)
 {
 	render_clear();
@@ -164,45 +159,5 @@ void render_graph(struct TimeInterval day_interval, struct TimeInterval *tr, siz
 	}
 
 	render_update();
-}
-
-void render_settings(const struct AppSettings *s)
-{
-	struct ui *ui = ui_create();
-
-	if(!ui){
-		fprintf(stderr, "Failed to malloc ui");
-		exit(1);
-	}
-
-	ui_add_label(ui, 3, 5, 21, 2, "Stopped on app start");
-	ui_add_checkbox(ui, 26, 5, s->stopped_on_app_start, NULL);
-
-	char buf[100];
-	sprintf(buf, "%d", s->stop_after_min);
-
-	ui_add_label(ui, 3, 9, 21, 2, "Stop after: ");
-	ui_add_textbox(ui, 26, 9, 21, 2, buf, NULL);
-
-	sprintf(buf, "%d", s->min_seconds_to_save);
-	ui_add_label(ui, 3, 13, 21, 2, "Min save time, sec");
-	ui_add_textbox(ui, 26, 13, 21, 2, buf, NULL);
-
-	ui_add_button(ui, 3, 17, 7, 2, "Cancel", onCancellSettings);
-	ui_add_button(ui, 15, 17, 5, 2, "Save", onSaveSettings);
-
-	set_input_timeout(-1); //NOTE: -1 is for sync input
-	ui_render(ui);
-	while(in_settings_window) {
-		render_clear();
-		render_text(3, 1, "Settings");
-		render_text(3, 2, "--------");
-		ui_render(ui);
-		render_update();
-		int i = get_keyboard_input();
-		ui_process_input(ui, i);
-	}
-	in_settings_window = 1;
-	set_input_timeout(GETCH_TIMEOUT_MS);
 }
 

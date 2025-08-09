@@ -11,6 +11,7 @@
 #include "db.h"
 #include "timer.h"
 #include "app_context.h"
+#include "ui/settings_view.h"
 
 #define EXIT_APP 1
 #define UPDATE_INPUT 512
@@ -19,7 +20,6 @@
 int handle_input_graph_view(struct AppContext *context, int input_key);
 int handle_input_timer_view(struct AppContext *context, int input_key);
 int handle_input_help_view(struct AppContext *context, int input_key);
-int handle_input_settings_view (struct AppContext *context, int input_key);
 
 int handle_input_global(struct AppContext *context, int *altered_input);
 
@@ -48,6 +48,11 @@ int main(void)
 	ctx.settings.stop_after_min = -1; // Do not stop at all
 	ctx.settings.min_seconds_to_save = 0;
 
+	struct settings_view * sv = create_settings_view(&ctx, NULL);
+	if(!sv) {
+		fprintf(stderr, "Failed to create settings view\n");
+		return 1;
+	}
 
 	if(!ctx.settings.stopped_on_app_start)
 		timer_start(&timer);
@@ -66,7 +71,7 @@ int main(void)
 			status = handle_input_graph_view(&ctx, input);
 			break;
 		case SETTINGS_VIEW:
-			status = handle_input_settings_view(&ctx, input);
+			status = handle_input_settings_view(sv, input);
 			break;
 		}
 
@@ -147,18 +152,6 @@ int handle_input_help_view(struct AppContext *ctx, int input) {
 	case UPDATE_INPUT:
 		render_help();
 		break;
-	default:
-		break;
-	}
-
-	return 0;
-}
-
-int handle_input_settings_view (struct AppContext *ctx, int input) {
-	switch (input) {
-	case UPDATE_INPUT:
-		render_settings(&ctx->settings);
-		ctx->view = TIMER_VIEW;
 	default:
 		break;
 	}

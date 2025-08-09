@@ -3,7 +3,7 @@ build_dir=build
 target=ttimer
 
 main: prepare $(build_dir)/libsqlite3.a
-	gcc -std=c11 -g -Wall $(src) -lncurses -lm -L$(build_dir) -lsqlite3 -o $(build_dir)/$(target)
+	gcc -std=c11 -g -Wall -I . $(src) -lncurses -lm -L$(build_dir) -lsqlite3 -o $(build_dir)/$(target)
 
 prepare:
 	mkdir -p build

@@ -2,7 +2,7 @@
 #define _TTIMER_DRAW_H_
 
 #include "timer.h"
-#include "settings.h"
+#include "app_context.h"
 
 struct Texture {
 	char *data;

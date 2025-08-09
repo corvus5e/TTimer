@@ -1,3 +1,4 @@
 [submodule "HomeTUI"]
 	path = HomeTUI
-	url = https://github.com/corvus5e/HomeTUI
+	url  = git@github.com:corvus5e/HomeTUI.git
+	#url = https://github.com/corvus5e/HomeTUI

@@ -10,37 +10,25 @@
 #include "draw.h"
 #include "db.h"
 #include "timer.h"
-#include "settings.h"
+#include "app_context.h"
 
 #define EXIT_APP 1
 #define UPDATE_INPUT 512
 #define IDLE_INPUT -1 //TODO: Put into HomeTUI
-
-enum AppView { TIMER_VIEW, HELP_VIEW, GRAPH_VIEW, SETTINGS_VIEW};
-
-struct AppSettings _settings;
-
-struct AppContext {
-	struct Timer *timer;
-	enum AppView view;
-	int day_shift;
-};
 
 int handle_input_graph_view(struct AppContext *context, int input_key);
 int handle_input_timer_view(struct AppContext *context, int input_key);
 int handle_input_help_view(struct AppContext *context, int input_key);
 int handle_input_settings_view (struct AppContext *context, int input_key);
 
+int handle_input_global(struct AppContext *context, int *altered_input);
+
 /* Saves time if last active interval is valid (timer is paused or stopped)
  * And interval is not zero */
-int save_active_inteval_time(struct Timer*);
+int save_active_inteval_time(struct Timer*, int min_seconds_to_save);
 
 int main(void)
 {
-	_settings.stopped_on_app_start = 1;
-	_settings.stop_after_min = -1; // Do not stop at all
-	_settings.min_seconds_to_save = 30;
-
 	render_init(1000);
 
 	if(db_init() != 0) {
@@ -51,36 +39,44 @@ int main(void)
 	struct Timer timer;
 	timer_reset(&timer);
 
-	struct AppContext cxt;
-	cxt.timer = &timer;
-	cxt.view = TIMER_VIEW;
-	cxt.day_shift = 0;
+	struct AppContext ctx;
+	ctx.timer = &timer;
+	ctx.view = TIMER_VIEW;
+	ctx.day_shift = 0;
 
-	if(!_settings.stopped_on_app_start)
+	ctx.settings.stopped_on_app_start = 1;
+	ctx.settings.stop_after_min = -1; // Do not stop at all
+	ctx.settings.min_seconds_to_save = 0;
+
+
+	if(!ctx.settings.stopped_on_app_start)
 		timer_start(&timer);
 
 	int input = UPDATE_INPUT;
 
-	for (int status;;) {
-		switch (cxt.view) {
+	for (int status = 0;;) {
+		switch (ctx.view) {
 		case TIMER_VIEW:
-			status = handle_input_timer_view(&cxt, input);
+			status = handle_input_timer_view(&ctx, input);
 			break;
 		case HELP_VIEW:
-			status = handle_input_help_view(&cxt, input);
+			status = handle_input_help_view(&ctx, input);
 			break;
 		case GRAPH_VIEW:
-			status = handle_input_graph_view(&cxt, input);
+			status = handle_input_graph_view(&ctx, input);
 			break;
 		case SETTINGS_VIEW:
-			status = handle_input_settings_view(&cxt, input);
+			status = handle_input_settings_view(&ctx, input);
 			break;
 		}
+
+		input = get_keyboard_input();
+
+		status = handle_input_global(&ctx, &input);
 
 		if (status == EXIT_APP)
 			break;
 
-		input = get_keyboard_input();
 		//TODO: handle resize
 	}
 
@@ -93,12 +89,6 @@ int main(void)
 
 int handle_input_graph_view(struct AppContext *ctx, int input) {
 	switch (input) {
-	case ESC:
-		ctx->view = TIMER_VIEW;
-		return handle_input_timer_view(ctx, UPDATE_INPUT);
-	case 'q':
-		ctx->view = TIMER_VIEW;
-		return handle_input_timer_view(ctx, input);
 	case 'r':
 		ctx->day_shift = 0;
 		input = UPDATE_INPUT;
@@ -129,27 +119,14 @@ int handle_input_graph_view(struct AppContext *ctx, int input) {
 
 int handle_input_timer_view(struct AppContext *ctx, int input) {
 	switch (input) {
-	case 'h':
-		ctx->view = HELP_VIEW;
-		return handle_input_help_view(ctx, UPDATE_INPUT);
-	case 'g':
-		ctx->view = GRAPH_VIEW;
-		return handle_input_graph_view(ctx, UPDATE_INPUT);
-	case 's':
-		ctx->view = SETTINGS_VIEW;
-		return handle_input_settings_view(ctx, UPDATE_INPUT);
 	case ' ':
 		if (ctx->timer->stopped) {
 			timer_start(ctx->timer);
 		} else {
 			timer_pause(ctx->timer);
-			save_active_inteval_time(ctx->timer);
+			save_active_inteval_time(ctx->timer, ctx->settings.min_seconds_to_save);
 		}
 		break;
-	case 'q':
-		timer_stop(ctx->timer);
-		save_active_inteval_time(ctx->timer);
-		return EXIT_APP;
 	case UPDATE_INPUT:
 	case IDLE_INPUT:
 		timer_update(ctx->timer);
@@ -167,21 +144,6 @@ int handle_input_timer_view(struct AppContext *ctx, int input) {
 
 int handle_input_help_view(struct AppContext *ctx, int input) {
 	switch (input) {
-	case 'h':
-		ctx->day_shift -= 1;
-		break;
-	case 'l':
-		ctx->day_shift += 1;
-		break;
-	case 'g':
-		ctx->view = GRAPH_VIEW;
-		return handle_input_graph_view(ctx, UPDATE_INPUT);
-	case ESC:
-		ctx->view = TIMER_VIEW;
-		return handle_input_timer_view(ctx, IDLE_INPUT);
-	case 'q':
-		ctx->view = TIMER_VIEW;
-		return handle_input_timer_view(ctx, input);
 	case UPDATE_INPUT:
 		render_help();
 		break;
@@ -194,14 +156,9 @@ int handle_input_help_view(struct AppContext *ctx, int input) {
 
 int handle_input_settings_view (struct AppContext *ctx, int input) {
 	switch (input) {
-	case 'q':
-		ctx->view = TIMER_VIEW;
-		return handle_input_timer_view(ctx, input);
 	case UPDATE_INPUT:
-		render_settings(&_settings);
-	case ESC:
+		render_settings(&ctx->settings);
 		ctx->view = TIMER_VIEW;
-		return handle_input_timer_view(ctx, IDLE_INPUT);
 	default:
 		break;
 	}
@@ -209,7 +166,41 @@ int handle_input_settings_view (struct AppContext *ctx, int input) {
 	return 0;
 }
 
-int save_active_inteval_time(struct Timer* timer) {
+int handle_input_global(struct AppContext *ctx, int *input_key) {
+	if(*input_key == ESC) {
+		ctx->view = TIMER_VIEW;
+		*input_key = IDLE_INPUT;
+		return 0;
+	}
+
+	if(*input_key == 'q') {
+		timer_stop(ctx->timer);
+		save_active_inteval_time(ctx->timer, ctx->settings.min_seconds_to_save);
+		handle_input_timer_view(ctx, UPDATE_INPUT);
+		return EXIT_APP;
+	}
+
+	switch (*input_key) {
+	case 'g':
+		ctx->view = GRAPH_VIEW;
+		*input_key = UPDATE_INPUT;
+		break;
+	case 'h':
+		if (ctx->view != GRAPH_VIEW) {
+			ctx->view = HELP_VIEW;
+			*input_key = UPDATE_INPUT;
+		}
+		break;
+	case 's':
+		ctx->view = SETTINGS_VIEW;
+		*input_key = UPDATE_INPUT;
+		break;
+	}
+
+	return 0;
+}
+
+int save_active_inteval_time(struct Timer* timer, int min_seconds_to_save) {
 	if(timer->start == 0) /* Timer has not been even started */
 		return 1;
 
@@ -221,7 +212,7 @@ int save_active_inteval_time(struct Timer* timer) {
 
 	struct TimeInterval ti = timer->last_active_interval;
 
-	if(difftime(ti.end, ti.start) <= _settings.min_seconds_to_save) /* Active time interval incorrect or too small */
+	if(difftime(ti.end, ti.start) <= min_seconds_to_save) /* Active time interval incorrect or too small */
 		return 1;
 
 	return db_save_time(timer->last_active_interval);

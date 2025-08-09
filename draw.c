@@ -3,6 +3,7 @@
 #include "HomeTUI/home_tui.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -168,6 +169,12 @@ void render_graph(struct TimeInterval day_interval, struct TimeInterval *tr, siz
 void render_settings(const struct AppSettings *s)
 {
 	struct ui *ui = ui_create();
+
+	if(!ui){
+		fprintf(stderr, "Failed to malloc ui");
+		exit(1);
+	}
+
 	ui_add_label(ui, 3, 5, 21, 2, "Stopped on app start");
 	ui_add_checkbox(ui, 26, 5, s->stopped_on_app_start, NULL);
 

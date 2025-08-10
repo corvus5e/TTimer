@@ -71,8 +71,7 @@ void render_settings_view(struct settings_view *view)
 	render_update();
 }
 
-void dispose_settings_view(struct settings_view *v)
+void dispose_settings_view(struct settings_view *view)
 {
-	if (v)
-		free(v);
+	free(view);
 }

@@ -3,9 +3,6 @@
 #include "HomeTUI/home_tui.h"
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
 
 #include "timer.h"
 
@@ -14,11 +11,6 @@
 #define BUF_LEN 10
 
 #define SECS_DAY 86400
-
-#define MINUTES_BLOCK 5
-#define GRAPH_ROWS 12 /* The hours is devided on MINUTES_BLOCK */
-#define GRAPH_COLS 24 /* Display all 24 hours*/
-#define COLS_WIDTH 3
 
 extern const struct Texture _textures[];
 
@@ -105,59 +97,3 @@ void render_help()
 
 	render_update();
 }
-
-void render_graph(struct TimeInterval day_interval, struct TimeInterval *tr, size_t n)
-{
-	int cols, lines;
-	get_window_size(&cols, &lines);
-
-	render_clear();
-
-	char table[GRAPH_COLS][GRAPH_ROWS] = {0};
-
-	for (int min = 0; min < GRAPH_ROWS; ++min)
-		render_ftext(1, lines - 3 - min, "%d", 5 * (min + 1));
-
-	for (int h = 0; h < GRAPH_COLS; ++h) {
-		render_ftext(5 + COLS_WIDTH * h + 1, lines - 1, "%d", h);
-	}
-
-	struct tm *buf;
-	long total = 0;
-
-	for (int i = 0; i < n; ++i) {
-		struct TimeInterval *c = tr + i;
-
-		buf = localtime(&c->start);
-		int start_offset = buf->tm_hour * GRAPH_ROWS + buf->tm_min / MINUTES_BLOCK;
-
-		buf = localtime(&c->end);
-		int end_offset = buf->tm_hour * GRAPH_ROWS + buf->tm_min / MINUTES_BLOCK;
-
-		total += difftime(c->end, c->start);
-
-		for (int k = start_offset; k <= end_offset; ++k)
-			table[k / GRAPH_ROWS][k % GRAPH_ROWS] = 1;
-	}
-
-
-	buf = localtime(&day_interval.start); // Get date
-	render_ftext(1, 1, "%02d.%02d.%d",buf->tm_mday, buf->tm_mon + 1, 1900 + buf->tm_year);
-
-
-    	long hours = total/ 3600;
-    	long minutes = (total % 3600) / 60;
-    	long seconds = total % 60;
-
-	render_ftext(1, 2, "Total time worked: %luh %lum %lus",  hours, minutes, seconds);
-
-	for (int i = 0; i < GRAPH_COLS; ++i) {
-		for (int j = 0; j < GRAPH_ROWS; ++j) {
-			if (table[i][j] > 0)
-				render_cell(5 + COLS_WIDTH * i + 1, lines - 3 - j, '#');
-		}
-	}
-
-	render_update();
-}
-

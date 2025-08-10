@@ -12,21 +12,18 @@
 #include "draw.h"
 #include "timer.h"
 #include "ui/settings_view.h"
+#include "ui/graph_view.h"
 
 #define EXIT_APP 2
 #define IDLE_INPUT -1 // TODO: Put into HomeTUI
 
-int handle_input_graph_view(struct AppContext *context, int input_key);
 int handle_input_timer_view(struct AppContext *context, int input_key);
-
 int handle_input_global(struct AppContext *context, int *altered_input);
 
 /* App actions */
-int onSaveSettings(struct AppContext *ctx)
-{
-	ctx->view = TIMER_VIEW;
-	return 0;
-};
+int on_save_settings(struct AppContext *ctx);
+
+int get_time_intervals(struct TimeInterval time_period, struct TimeInterval **intervals, size_t *size);
 
 /* Saves time if last active interval is valid (timer is paused or stopped)
  * And interval is not zero */
@@ -53,11 +50,18 @@ int main(void)
 	ctx.settings.stop_after_min = -1; // Do not stop at all
 	ctx.settings.min_seconds_to_save = 0;
 
-	struct settings_view *sv = create_settings_view(&ctx, onSaveSettings);
+	struct settings_view *sv = create_settings_view(&ctx, on_save_settings);
 	if (!sv) {
 		fprintf(stderr, "Failed to create settings view\n");
 		return 1;
 	}
+
+	struct graph_view *gv = create_graph_view(&ctx, get_time_intervals);
+	if (!gv) {
+		fprintf(stderr, "Failed to create graph view\n");
+		return 1;
+	}
+
 
 	if (!ctx.settings.stopped_on_app_start)
 		timer_start(&timer);
@@ -78,13 +82,7 @@ int main(void)
 				render_help();
 				break;
 			case GRAPH_VIEW:
-				;
-				struct TimeInterval *recorder_intervals;
-				size_t n = 0;
-				struct TimeInterval day_interval = get_day_interval(time(NULL), ctx.day_shift);
-				if (db_get_time(day_interval, &recorder_intervals, &n))
-					fprintf(stderr, "Error: Failed to get " "data from db\n");
-				render_graph(day_interval, recorder_intervals, n);
+				render_graph_view(gv);
 				break;
 			case SETTINGS_VIEW:
 				render_settings_view(sv);
@@ -110,13 +108,12 @@ int main(void)
 		case HELP_VIEW:
 			break;
 		case GRAPH_VIEW:
-			status = handle_input_graph_view(&ctx, input);
+			status = handle_input_graph_view(gv, input);
 			break;
 		case SETTINGS_VIEW:
 			status = handle_input_settings_view(sv, input);
 			break;
 		}
-
 	}
 
 	render_dispose();
@@ -126,22 +123,6 @@ int main(void)
 	return 0;
 }
 
-int handle_input_graph_view(struct AppContext *ctx, int input)
-{
-	switch (input) {
-	case 'r':
-		ctx->day_shift = 0;
-		return 1;
-	case 'h':
-		ctx->day_shift -= 1;
-		return 1;
-	case 'l':
-		ctx->day_shift += 1;
-		return 1;
-	}
-
-	return 0;
-}
 
 int handle_input_timer_view(struct AppContext *ctx, int input)
 {
@@ -150,8 +131,7 @@ int handle_input_timer_view(struct AppContext *ctx, int input)
 			timer_start(ctx->timer);
 		} else {
 			timer_pause(ctx->timer);
-			save_active_inteval_time(
-			    ctx->timer, ctx->settings.min_seconds_to_save);
+			save_active_inteval_time(ctx->timer, ctx->settings.min_seconds_to_save);
 		}
 		return 1;
 	}
@@ -195,6 +175,23 @@ int handle_input_global(struct AppContext *ctx, int *input_key)
 	return 0;
 }
 
+/* View callbacks */
+int on_save_settings(struct AppContext *ctx)
+{
+	ctx->view = TIMER_VIEW;
+	return 0;
+};
+
+int get_time_intervals(struct TimeInterval time_period, struct TimeInterval **intervals, size_t *size)
+{
+	if (db_get_time(time_period, intervals, size)) {
+		fprintf(stderr, "Error: Failed to get data from db\n");
+		return 0;
+	}
+
+	return 1;
+}
+
 int save_active_inteval_time(struct Timer *timer, int min_seconds_to_save)
 {
 	if (timer->start == 0) /* Timer has not been even started */
@@ -208,9 +205,7 @@ int save_active_inteval_time(struct Timer *timer, int min_seconds_to_save)
 
 	struct TimeInterval ti = timer->last_active_interval;
 
-	if (difftime(ti.end, ti.start) <=
-	    min_seconds_to_save) /* Active time interval incorrect or too small
-				  */
+	if (difftime(ti.end, ti.start) <= min_seconds_to_save) /* Active time interval incorrect or too small */
 		return 1;
 
 	return db_save_time(timer->last_active_interval);

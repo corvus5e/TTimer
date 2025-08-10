@@ -10,14 +10,16 @@
 struct settings_view {
 	struct AppContext * ctx;
 	struct ui * ui;
-	int is_editing_text;
+	AppAction on_save_settings;
 };
 
-static int in_settings_window = 1; //TODO: Get rid of static
-
-void onCancellSettings(struct ui_button *b) { in_settings_window = 0; }
-void onSaveSettings(struct ui_button *b) { in_settings_window = 0; };
-
+static void onSaveSettings(struct ui_button *b, void * arg)
+{
+	struct settings_view *sv = (struct settings_view *)arg;
+	if(sv && sv->ctx && sv->on_save_settings) {
+		sv->on_save_settings(sv->ctx);
+	}
+};
 
 struct settings_view *create_settings_view(struct AppContext *ctx, AppAction save_settings) {
 	struct settings_view *view = (struct settings_view *)malloc(sizeof(struct settings_view));
@@ -26,6 +28,7 @@ struct settings_view *create_settings_view(struct AppContext *ctx, AppAction sav
 		return NULL;
 
 	view->ctx = ctx;
+	view->on_save_settings = save_settings;
 
 	struct ui *ui = ui_create();
 	view->ui = ui;
@@ -49,24 +52,13 @@ struct settings_view *create_settings_view(struct AppContext *ctx, AppAction sav
 	ui_add_label(ui, 3, 13, 21, 2, "Min save time, sec");
 	ui_add_textbox(ui, 26, 13, 21, 2, buf, NULL);
 
-	ui_add_button(ui, 3, 17, 7, 2, "Cancel", onCancellSettings);
-	ui_add_button(ui, 15, 17, 5, 2, "Save", onSaveSettings);
+	ui_add_button(ui, 3, 17, 5, 2, "Save", onSaveSettings, view);
 
 	return view;
 }
 
 int handle_input_settings_view(struct settings_view *view, int input_key) {
-	ui_process_input(view->ui, input_key);
-	if(input_key != -1/*IDLE_INPUT*/){ //TODO: Take this def from HomeTUI
-		render_settings_view(view);
-	}
-
-	if(in_settings_window == 0) { //TODO: This is temporary Exit, call onSave/onCancel callback
-		view->ctx->view = TIMER_VIEW;
-		in_settings_window = 1;
-	}
-
-	return 0;
+	return ui_process_input(view->ui, input_key);
 }
 
 void render_settings_view(struct settings_view *view)

@@ -1,5 +1,6 @@
-src=main.c timer.c textures.c db_sqlite.c \
-    ui/settings_view.c ui/graph_view.c ui/timer_view.c \
+src=main.c timer.c \
+    ui/textures.c ui/settings_view.c ui/graph_view.c ui/timer_view.c \
+    db/db_sqlite.c \
     HomeTUI/ncurses_io.c HomeTUI/home_tui.c \
 
 build_dir=build
@@ -15,7 +16,7 @@ prepare:
 	ar rcs $(build_dir)/libsqlite3.a $(build_dir)/sqlite3.o
 
  $(build_dir)/sqlite3.o:
-	gcc -c -std=c11 -Wall sqlite3/sqlite3.c -o $(build_dir)/sqlite3.o
+	gcc -c -std=c11 -Wall db/sqlite3/sqlite3.c -o $(build_dir)/sqlite3.o
 
 profile: $(build_dir)/libsqlite3.a # for gprof
 	gcc -std=c11 -Wall $(src) -pg -lncurses -lpthread -L$(build_dir) -lsqlite3

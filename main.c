@@ -8,8 +8,9 @@
 
 #include "HomeTUI/home_tui.h"
 #include "app_context.h"
-#include "db.h"
 #include "timer.h"
+
+#include "db/db.h"
 
 #include "ui/settings_view.h"
 #include "ui/graph_view.h"

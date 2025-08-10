@@ -1,22 +1,68 @@
-#include "draw.h"
-
-#include "HomeTUI/home_tui.h"
+#include "timer_view.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "timer.h"
-
-#define GETCH_TIMEOUT_MS 1000
+#include "HomeTUI/home_tui.h"
 
 #define BUF_LEN 10
 
 #define SECS_DAY 86400
 
+#define IDLE_INPUT -1 // TODO: Put into HomeTUI
+
+
 extern const struct Texture _textures[];
 
-void render_timer(const struct Timer *ts, int x, int y)
+struct timer_view {
+	struct AppContext *ctx;
+	AppAction on_pause_resume;
+	AppAction update_timer;
+};
+
+struct timer_view *create_timer_view(struct AppContext *ctx, AppAction on_pause_resume, AppAction update_timer)
 {
+	struct timer_view *view = (struct timer_view *)malloc(sizeof(struct timer_view));
+
+	if(!view)
+		return NULL;
+
+	if(!ctx || !on_pause_resume || !update_timer)
+		return NULL;
+
+	view->ctx = ctx;
+	view->on_pause_resume = on_pause_resume;
+	view->update_timer = update_timer;
+
+	return view;
+}
+
+int handle_input_timer_view(struct timer_view *view, int input)
+{
+	if (input == ' ') {
+		view->on_pause_resume(view->ctx);
+		return 1;
+	}
+
+	if(input == IDLE_INPUT) {
+		view->update_timer(view->ctx);
+		return 1;
+	}
+
+	return 0;
+}
+
+void render_timer_view(struct timer_view *view)
+{
+	int w, h;
+	get_window_size(&w, &h);
+	int x = (w - 48) / 2;
+	int y = (h - 7) / 2;
+
 	render_clear();
+
+	struct Timer *ts = view->ctx->timer;
 
 	char buf[BUF_LEN];
 	int len = 0;
@@ -73,27 +119,7 @@ void render_timer(const struct Timer *ts, int x, int y)
 	render_update();
 }
 
-void render_help()
+void dispose_timer_view(struct timer_view *view)
 {
-	int cols, lines;
-	get_window_size(&cols, &lines);
-
-	render_clear();
-
-	render_text(5, 1, "TTimer");
-	render_text(5, 2, "------");
-	render_text(5, 3, "'Space' - pause/resume timer");
-	render_text(5, 3, "'q'     - quit timer and save your time");
-	render_text(5, 4, "'Esc'   - back to timer");
-	render_text(5, 5, "'g'     - show time graph");
-	render_text(5, 6, "'s'     - show settings");
-	render_text(5, 7, "'h'     - show this help");
-	render_text(5, 9, "In graph view");
-	render_text(5, 10, "-------------");
-	render_text(5, 11, "'h'     - switch 1 day backwards");
-	render_text(5, 12, "'l'     - switch 1 day forward");
-	render_text(5, 13, "'r'     - reset to today");
-	render_ftext(5, 14, "Window size: %d %d", lines, cols);
-
-	render_update();
+	free(view);
 }

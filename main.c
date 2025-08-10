@@ -9,19 +9,24 @@
 #include "HomeTUI/home_tui.h"
 #include "app_context.h"
 #include "db.h"
-#include "draw.h"
 #include "timer.h"
+
 #include "ui/settings_view.h"
 #include "ui/graph_view.h"
+#include "ui/timer_view.h"
+#include "ui/help_view.h"
 
 #define EXIT_APP 2
 #define IDLE_INPUT -1 // TODO: Put into HomeTUI
 
-int handle_input_timer_view(struct AppContext *context, int input_key);
 int handle_input_global(struct AppContext *context, int *altered_input);
 
 /* App actions */
-int on_save_settings(struct AppContext *ctx);
+int on_save_settings(struct AppContext *ctx, struct AppSettings new_settings);
+
+int timer_update_callback(struct AppContext *ctx);
+
+int on_pause_resume(struct AppContext *ctx);
 
 int get_time_intervals(struct TimeInterval time_period, struct TimeInterval **intervals, size_t *size);
 
@@ -62,6 +67,11 @@ int main(void)
 		return 1;
 	}
 
+	struct timer_view *tv = create_timer_view(&ctx, on_pause_resume, timer_update_callback);
+	if (!tv) {
+		fprintf(stderr, "Failed to create graph view\n");
+		return 1;
+	}
 
 	if (!ctx.settings.stopped_on_app_start)
 		timer_start(&timer);
@@ -73,10 +83,7 @@ int main(void)
 		if (status) {
 			switch (ctx.view) {
 			case TIMER_VIEW:;
-				int w, h;
-				get_window_size(&w, &h);
-				timer_update(ctx.timer);
-				render_timer(ctx.timer, (w - 48) / 2, (h - 7) / 2); // TODO: Do something with it :)
+				render_timer_view(tv);
 				break;
 			case HELP_VIEW:
 				render_help();
@@ -92,6 +99,7 @@ int main(void)
 
 		input = get_keyboard_input();
 
+		//TODO: Think on the return value from this handler
 		status = handle_input_global(&ctx, &input);
 
 		if (status == EXIT_APP)
@@ -103,9 +111,9 @@ int main(void)
 		/* Handle input */
 		switch (ctx.view) {
 		case TIMER_VIEW:
-			status = handle_input_timer_view(&ctx, input);
+			status = handle_input_timer_view(tv, input);
 			break;
-		case HELP_VIEW:
+		case HELP_VIEW: /* Nothing to handle here */
 			break;
 		case GRAPH_VIEW:
 			status = handle_input_graph_view(gv, input);
@@ -123,38 +131,21 @@ int main(void)
 	return 0;
 }
 
-
-int handle_input_timer_view(struct AppContext *ctx, int input)
-{
-	if (input == ' ') {
-		if (ctx->timer->stopped) {
-			timer_start(ctx->timer);
-		} else {
-			timer_pause(ctx->timer);
-			save_active_inteval_time(ctx->timer, ctx->settings.min_seconds_to_save);
-		}
-		return 1;
-	}
-
-	return input == IDLE_INPUT;
-}
-
 int handle_input_global(struct AppContext *ctx, int *input_key)
 {
 	if (*input_key == ESC) {
 		ctx->view = TIMER_VIEW;
 		*input_key = IDLE_INPUT;
-		return 1;
+		return 0;
 	}
 
 	if (*input_key == 'q') {
 		timer_stop(ctx->timer);
 		save_active_inteval_time(ctx->timer, ctx->settings.min_seconds_to_save);
-		handle_input_timer_view(ctx, IDLE_INPUT);
 		return EXIT_APP;
 	}
 
-	if(ctx->view != TIMER_VIEW) /* Navidation to other views only from TIMER_VIEW */
+	if(ctx->view != TIMER_VIEW) /* Navigation to other views only from TIMER_VIEW */
 		return 0;
 
 	switch (*input_key) {
@@ -176,11 +167,30 @@ int handle_input_global(struct AppContext *ctx, int *input_key)
 }
 
 /* View callbacks */
-int on_save_settings(struct AppContext *ctx)
+int on_save_settings(struct AppContext *ctx, struct AppSettings new_settings)
 {
 	ctx->view = TIMER_VIEW;
+	timer_update(ctx->timer);
 	return 0;
 };
+
+int timer_update_callback(struct AppContext *ctx)
+{	//TODO: Is this callback needed, pass timer_update directly ?
+	timer_update(ctx->timer);
+	return 1;
+}
+
+int on_pause_resume(struct AppContext *ctx)
+{
+	if (ctx->timer->stopped) {
+		timer_start(ctx->timer);
+	} else {
+		timer_pause(ctx->timer);
+		save_active_inteval_time(ctx->timer, ctx->settings.min_seconds_to_save);
+	}
+
+	return 1;
+}
 
 int get_time_intervals(struct TimeInterval time_period, struct TimeInterval **intervals, size_t *size)
 {

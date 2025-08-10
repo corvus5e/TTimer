@@ -10,18 +10,22 @@
 struct settings_view {
 	struct AppContext * ctx;
 	struct ui * ui;
-	AppAction on_save_settings;
+	OnSaveSettings on_save_settings;
 };
 
 static void onSaveSettings(struct ui_button *b, void * arg)
 {
 	struct settings_view *sv = (struct settings_view *)arg;
+
+	struct AppSettings new_settings = {};
+	//TODO: Extract user input here
+
 	if(sv && sv->ctx && sv->on_save_settings) {
-		sv->on_save_settings(sv->ctx);
+		sv->on_save_settings(sv->ctx, new_settings);
 	}
 };
 
-struct settings_view *create_settings_view(struct AppContext *ctx, AppAction save_settings) {
+struct settings_view *create_settings_view(struct AppContext *ctx, OnSaveSettings save_settings) {
 	struct settings_view *view = (struct settings_view *)malloc(sizeof(struct settings_view));
 
 	if(!view)

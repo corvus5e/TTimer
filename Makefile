@@ -1,4 +1,7 @@
-src=main.c timer.c textures.c draw.c ui/settings_view.c ui/graph_view.c HomeTUI/ncurses_io.c HomeTUI/home_tui.c db_sqlite.c
+src=main.c timer.c textures.c db_sqlite.c \
+    ui/settings_view.c ui/graph_view.c ui/timer_view.c \
+    HomeTUI/ncurses_io.c HomeTUI/home_tui.c \
+
 build_dir=build
 target=ttimer
 

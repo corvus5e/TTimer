@@ -3,7 +3,9 @@
 
 #include "app_context.h"
 
-struct settings_view *create_settings_view(struct AppContext *ctx, AppAction save_settings);
+typedef int (*OnSaveSettings)(struct AppContext *, struct AppSettings new_settings);
+
+struct settings_view *create_settings_view(struct AppContext *ctx, OnSaveSettings save_settings);
 
 int handle_input_settings_view(struct settings_view *, int input_key);
 

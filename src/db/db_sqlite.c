@@ -1,4 +1,4 @@
-#include "db.h"
+#include <db/db.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,7 +7,7 @@
 #include "sqlite3/sqlite3.h"
 #include <timer/timer.h>
 
-#define DB_NAME "time_db.db"
+#define DB_NAME "data/time_db.db"
 #define TBL_NAKE "tbl1"
 
 #define SECS_DAY 86400

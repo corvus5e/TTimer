@@ -52,13 +52,25 @@ int db_init()
 		return 1;
 	}
 
-	const char *sql = "create table if not exists tbl1 (start int, end int);";
-	char *errmsg;
+	const char *tbl1_sql = "create table if not exists tbl1 (start int, end int);";
+	char *err_msg;
 
-	status = sqlite3_exec(_db, sql, NULL, NULL, &errmsg);
+	status = sqlite3_exec(_db, tbl1_sql, NULL, NULL, &err_msg);
 	if(status != SQLITE_OK) {
-		fprintf(stderr, "SQL error: %s\n", errmsg);
-		sqlite3_free(errmsg);
+		fprintf(stderr, "SQL error: %s\n", err_msg);
+		sqlite3_free(err_msg);
+		return 1;
+	}
+
+	const char *settings_sql = "create table if not exists settings \
+				    (stopped_on_app_start int, \
+				     stop_after_min int, \
+				     min_seconds_to_save int);";
+
+	status = sqlite3_exec(_db, settings_sql, NULL, NULL, &err_msg);
+	if(status != SQLITE_OK) {
+		fprintf(stderr, "SQL error: %s\n", err_msg);
+		sqlite3_free(err_msg);
 		return 1;
 	}
 
@@ -138,3 +150,37 @@ int db_get_time(struct TimeInterval interval, struct TimeInterval **time_ranges,
 
 	return 0;
 }
+
+int db_get_settings(struct AppSettings * settings)
+{
+	return -1;
+}
+
+int db_save_settings(struct AppSettings s)
+{
+	if(!_db) {
+		fprintf(stderr, "Error: db is NULL\n");
+		return -1;
+	}
+
+	char *query = sqlite3_mprintf(
+	    "insert into settings (stopped_on_app_start, stop_after_min, \
+				     min_seconds_to_save) \
+					values (%d, %d, %d);",
+	    s.stopped_on_app_start, s.stop_after_min, s.min_seconds_to_save);
+
+	char *errmsg;
+
+	int status = sqlite3_exec(_db, query, NULL, NULL, &errmsg);
+
+	sqlite3_free(query);
+
+	if(status != SQLITE_OK) {
+		fprintf(stderr, "SQL error: %s\n", errmsg);
+		sqlite3_free(errmsg);
+		return 1;
+	}
+
+	return 0;
+}
+

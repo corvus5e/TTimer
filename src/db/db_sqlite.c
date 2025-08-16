@@ -23,10 +23,10 @@ struct TimeRangeArray {
 
 static struct TimeRangeArray _time_ranges;
 
-static int callback(void *arg, int argc, char **argv, char **azColName)
+static int time_ranges_callback(void *arg, int argc, char **argv, char **azColName)
 {
 	if(argc != 2) {
-		fprintf(stderr, "Error in db: Unexpected number of columns\n");
+		fprintf(stderr, "Error in db: time_ranges_callback - Unexpected number of columns\n");
 		return -1;
 	}
 
@@ -41,6 +41,23 @@ static int callback(void *arg, int argc, char **argv, char **azColName)
 
 	return 0;
 }
+
+static int settings_callback(void *arg, int argc, char **argv, char **azColName)
+{
+	if(argc != 3) {
+		fprintf(stderr, "Error in db: settings_callback - Unexpected number of columns\n");
+		return -1;
+	}
+
+	struct AppSettings * settings = (struct AppSettings *)arg;
+
+	settings->stopped_on_app_start = atoi(argv[0]) > 0;
+	settings->stop_after_min = atoi(argv[1]);
+	settings->min_seconds_to_save = atoi(argv[2]);
+
+	return 0;
+}
+
 
 int db_init()
 {
@@ -90,15 +107,16 @@ int db_save_time(const struct TimeInterval ti)
 		return -1;
 	}
 
-	char *query = sqlite3_mprintf("insert into tbl1 (start, end) \
+
+	char *insert_query = sqlite3_mprintf("insert into tbl1 (start, end) \
 			values\
 			(%lu, %lu);", ti.start, ti.end);
 
 	char *errmsg;
 
-	int status = sqlite3_exec(_db, query, NULL, NULL, &errmsg);
+	int status = sqlite3_exec(_db, insert_query, NULL, NULL, &errmsg);
 
-	sqlite3_free(query);
+	sqlite3_free(insert_query);
 
 	if(status != SQLITE_OK) {
 		fprintf(stderr, "SQL error: %s\n", errmsg);
@@ -126,7 +144,7 @@ int db_get_time(struct TimeInterval interval, struct TimeInterval **time_ranges,
 			start, end, start, end);
 
 	char *errmsg;
-	int status = sqlite3_exec(_db, query, callback, NULL, &errmsg);
+	int status = sqlite3_exec(_db, query, time_ranges_callback, NULL, &errmsg);
 
 	sqlite3_free(query);
 
@@ -151,9 +169,28 @@ int db_get_time(struct TimeInterval interval, struct TimeInterval **time_ranges,
 	return 0;
 }
 
-int db_get_settings(struct AppSettings * settings)
+int db_get_settings(struct AppSettings * s)
 {
-	return -1;
+	if(!_db) {
+		fprintf(stderr, "Error: db is NULL\n");
+		return -1;
+	}
+
+	char *select_query = sqlite3_mprintf("select * from settings limit 1");
+
+	char *errmsg;
+
+	int status = sqlite3_exec(_db, select_query, settings_callback, s, &errmsg);
+
+	sqlite3_free(select_query);
+
+	if (status != SQLITE_OK) {
+		fprintf(stderr, "SQL error: %s\n", errmsg);
+		sqlite3_free(errmsg);
+		return 1;
+	}
+
+	return 0;
 }
 
 int db_save_settings(struct AppSettings s)
@@ -163,17 +200,32 @@ int db_save_settings(struct AppSettings s)
 		return -1;
 	}
 
-	char *query = sqlite3_mprintf(
+	char *errmsg;
+
+	/* Delete previous setings */
+	char *delete_query = sqlite3_mprintf("delete from settings");
+
+	int status = sqlite3_exec(_db, delete_query, NULL, NULL, &errmsg);
+
+	sqlite3_free(delete_query);
+
+	if (status != SQLITE_OK) {
+		fprintf(stderr, "SQL error: %s\n", errmsg);
+		sqlite3_free(errmsg);
+		return 1;
+	}
+	
+	/* Insert new settings */
+	char *insert_query = sqlite3_mprintf(
 	    "insert into settings (stopped_on_app_start, stop_after_min, \
 				     min_seconds_to_save) \
 					values (%d, %d, %d);",
 	    s.stopped_on_app_start, s.stop_after_min, s.min_seconds_to_save);
 
-	char *errmsg;
 
-	int status = sqlite3_exec(_db, query, NULL, NULL, &errmsg);
+	status = sqlite3_exec(_db, insert_query, NULL, NULL, &errmsg);
 
-	sqlite3_free(query);
+	sqlite3_free(insert_query);
 
 	if(status != SQLITE_OK) {
 		fprintf(stderr, "SQL error: %s\n", errmsg);

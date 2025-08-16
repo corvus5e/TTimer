@@ -23,11 +23,11 @@
 int handle_input_global(struct AppContext *context, int *altered_input);
 
 /* App actions */
-int on_save_settings(struct AppContext *ctx, struct AppSettings new_settings);
+int save_settings(struct AppContext *ctx, struct AppSettings new_settings);
 
 int timer_update_callback(struct AppContext *ctx);
 
-int on_pause_resume(struct AppContext *ctx);
+int pause_resume(struct AppContext *ctx);
 
 int get_time_intervals(struct TimeInterval time_period, struct TimeInterval **intervals, size_t *size);
 
@@ -52,11 +52,14 @@ int main(void)
 	ctx.view = TIMER_VIEW;
 	ctx.day_shift = 0;
 
-	ctx.settings.stopped_on_app_start = 1;
-	ctx.settings.stop_after_min = -1; // Do not stop at all
-	ctx.settings.min_seconds_to_save = 0;
+	if (db_get_settings(&ctx.settings) != 0) {
+		fprintf(stderr, "Failed to read settings. Using defaults\n");
+		ctx.settings.stopped_on_app_start = 1;
+		ctx.settings.stop_after_min = -1; // Do not stop at all
+		ctx.settings.min_seconds_to_save = 0;
+	}
 
-	struct settings_view *sv = create_settings_view(&ctx, on_save_settings);
+	struct settings_view *sv = create_settings_view(&ctx, save_settings, db_get_settings);
 	if (!sv) {
 		fprintf(stderr, "Failed to create settings view\n");
 		return 1;
@@ -68,7 +71,7 @@ int main(void)
 		return 1;
 	}
 
-	struct timer_view *tv = create_timer_view(&ctx, on_pause_resume, timer_update_callback);
+	struct timer_view *tv = create_timer_view(&ctx, pause_resume, timer_update_callback);
 	if (!tv) {
 		fprintf(stderr, "Failed to create graph view\n");
 		return 1;
@@ -168,8 +171,10 @@ int handle_input_global(struct AppContext *ctx, int *input_key)
 }
 
 /* View callbacks */
-int on_save_settings(struct AppContext *ctx, struct AppSettings new_settings)
+int save_settings(struct AppContext *ctx, struct AppSettings new_settings)
 {
+	db_save_settings(new_settings);
+	ctx->settings = new_settings;
 	ctx->view = TIMER_VIEW;
 	timer_update(ctx->timer);
 	return 0;
@@ -181,7 +186,7 @@ int timer_update_callback(struct AppContext *ctx)
 	return 1;
 }
 
-int on_pause_resume(struct AppContext *ctx)
+int pause_resume(struct AppContext *ctx)
 {
 	if (ctx->timer->stopped) {
 		timer_start(ctx->timer);

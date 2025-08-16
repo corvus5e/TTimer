@@ -5,7 +5,7 @@
 #include <time.h>
 
 #include "sqlite3/sqlite3.h"
-#include "timer.h"
+#include <timer/timer.h>
 
 #define DB_NAME "time_db.db"
 #define TBL_NAKE "tbl1"

@@ -1,7 +1,7 @@
 #ifndef _TTIMER_LOG_H_
 #define _TTIMER_LOG_H_
 
-#include <timer.h>
+#include <timer/timer.h>
 #include <app_context.h>
 
 int db_init();

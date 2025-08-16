@@ -3,7 +3,7 @@
 
 #include "app_context.h"
 
-#include "timer.h"
+#include <timer/timer.h>
 
 typedef int (*GetTimeIngervals)(struct TimeInterval time_period, struct TimeInterval **intervals, size_t *size);
 

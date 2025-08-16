@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "timer.h"
-#include "HomeTUI/home_tui.h"
+#include <timer/timer.h>
+#include <HomeTUI/home_tui.h>
 
 #define BUF_LEN 10
 

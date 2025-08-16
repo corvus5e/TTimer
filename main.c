@@ -6,16 +6,16 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "HomeTUI/home_tui.h"
-#include "app_context.h"
-#include "timer.h"
+#include <HomeTUI/home_tui.h>
+#include <app_context.h>
+#include <timer/timer.h>
 
-#include "db/db.h"
+#include <db/db.h>
 
-#include "ui/settings_view.h"
-#include "ui/graph_view.h"
-#include "ui/timer_view.h"
-#include "ui/help_view.h"
+#include <ui/settings_view.h>
+#include <ui/graph_view.h>
+#include <ui/timer_view.h>
+#include <ui/help_view.h>
 
 #define EXIT_APP 2
 #define IDLE_INPUT -1 // TODO: Put into HomeTUI

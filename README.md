@@ -8,12 +8,12 @@ TTimer is a terminal timer and time tracker
  - [x] logs time spend until closing
  - [x] help windows
  - [x] stats window
- - [ ] user settings window
+ - [x] user settings window
  - [ ] count down
  - [ ] confirmation window after saving settings that timer will be reset
- - [ ] Do separate table for settings
+ - [x] Do separate table for settings
  - [ ] Separate "set timer" view/tui window
 
- - [ ] HomeTUI bug with rendering in edit mode all text boxes
+ - [x] HomeTUI bug with rendering in edit mode all text boxes
  - [ ] Improve strings manipulation for text boxes
 

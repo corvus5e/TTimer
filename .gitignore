@@ -1,5 +1,7 @@
 .clang-format
 .cache/
+build/
+data/
 compile_commands.json
 
 *.a

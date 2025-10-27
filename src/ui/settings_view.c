@@ -13,6 +13,7 @@ struct settings_view {
 	struct ui_checkbox * stopped_on_start_check_box;
 	struct ui_textbox * stop_after_textbox;
 	struct ui_textbox * min_time_save_textbox;
+	struct ui_checkbox * save_on_term;
 	SaveSettings save_settings_func;
 	GetSettings get_settings_func;
 };
@@ -66,6 +67,9 @@ struct settings_view *create_settings_view(struct AppContext *ctx,
 	sprintf(buf, "%d", ctx->settings.min_seconds_to_save);
 	ui_add_label(ui, 3, 13, 21, 2, "Min save time, sec");
 	view->min_time_save_textbox = ui_add_textbox(ui, 26, 13, 21, 2, buf, NULL);
+
+	ui_add_label(ui, 35, 5, 21, 2, "Save on TERM, sec");
+	view->save_on_term = ui_add_checkbox(ui, 58, 5, 0, NULL);
 
 	ui_add_button(ui, 3, 17, 5, 2, "Save", on_save_settings, view);
 

@@ -11,7 +11,12 @@ src=src/main.c \
     src/HomeTUI/home_tui.c \
 
 main: prepare $(build_dir)/libsqlite3.a
-	gcc -std=c11 -g -Wall -I ./src/ $(src) -lncurses -lm -L$(build_dir) -lsqlite3 -o $(build_dir)/$(target)
+	clang -std=c11 -g -Wall \
+		-D_POSIX_C_SOURCE=199309L \
+		-I ./src/ $(src) \
+		-lncurses -lm -lsqlite3 \
+		-L$(build_dir) \
+		-o $(build_dir)/$(target)
 
 prepare:
 	mkdir -p build

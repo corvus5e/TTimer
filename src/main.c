@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include <HomeTUI/home_tui.h>
 #include <app_context.h>
@@ -35,8 +36,16 @@ int get_time_intervals(struct TimeInterval time_period, struct TimeInterval **in
  * And interval is not zero */
 int save_active_inteval_time(struct Timer *, int min_seconds_to_save);
 
+void term_handler(int);
+
 int main(void)
 {
+	struct sigaction sa;
+	sa.sa_handler = term_handler;
+	if(sigaction(SIGINT, &sa, NULL) < 0){
+		fprintf(stderr, "Failed to setup SIGTERM handler\n");
+	}
+
 	render_init(1000); /* 1 second */
 
 	if (db_init() != 0) {
@@ -128,8 +137,15 @@ int main(void)
 		}
 	}
 
-	render_dispose();
+	/* Print exit message and release resources */
+	int cols, lines;
+	get_window_size(&cols, &lines);
 
+	render_text(2, lines - 2, "Press any key to exit ...\n");
+	set_input_timeout(-1);
+	get_keyboard_input();
+
+	render_dispose();
 	db_dispose();
 
 	return 0;
@@ -226,3 +242,10 @@ int save_active_inteval_time(struct Timer *timer, int min_seconds_to_save)
 
 	return db_save_time(timer->last_active_interval);
 }
+
+void term_handler(int sig_num) {
+	render_dispose();
+	db_dispose();
+	exit(0);
+}
+

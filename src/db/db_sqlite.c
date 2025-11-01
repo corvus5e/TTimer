@@ -44,7 +44,7 @@ static int time_ranges_callback(void *arg, int argc, char **argv, char **azColNa
 
 static int settings_callback(void *arg, int argc, char **argv, char **azColName)
 {
-	if(argc != 3) {
+	if(argc != 4) {
 		fprintf(stderr, "Error in db: settings_callback - Unexpected number of columns\n");
 		return -1;
 	}
@@ -54,6 +54,7 @@ static int settings_callback(void *arg, int argc, char **argv, char **azColName)
 	settings->stopped_on_app_start = atoi(argv[0]) > 0;
 	settings->stop_after_min = atoi(argv[1]);
 	settings->min_seconds_to_save = atoi(argv[2]);
+	settings->save_on_term_signal = atoi(argv[3]);
 
 	return 0;
 }
@@ -82,7 +83,8 @@ int db_init()
 	const char *settings_sql = "create table if not exists settings \
 				    (stopped_on_app_start int, \
 				     stop_after_min int, \
-				     min_seconds_to_save int);";
+				     min_seconds_to_save int, \
+				     save_on_term int);";
 
 	status = sqlite3_exec(_db, settings_sql, NULL, NULL, &err_msg);
 	if(status != SQLITE_OK) {
@@ -218,9 +220,9 @@ int db_save_settings(struct AppSettings s)
 	/* Insert new settings */
 	char *insert_query = sqlite3_mprintf(
 	    "insert into settings (stopped_on_app_start, stop_after_min, \
-				     min_seconds_to_save) \
-					values (%d, %d, %d);",
-	    s.stopped_on_app_start, s.stop_after_min, s.min_seconds_to_save);
+				     min_seconds_to_save, save_on_term) \
+					values (%d, %d, %d, %d);",
+	    s.stopped_on_app_start, s.stop_after_min, s.min_seconds_to_save, s.save_on_term_signal);
 
 
 	status = sqlite3_exec(_db, insert_query, NULL, NULL, &errmsg);

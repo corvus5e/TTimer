@@ -22,12 +22,17 @@ static void on_save_settings(struct ui_button *b, void * arg)
 {
 	struct settings_view *sv = (struct settings_view *)arg;
 
+	if(!sv) {
+		return;
+	}
+
 	struct AppSettings new_settings;
 	new_settings.stopped_on_app_start = sv->stopped_on_start_check_box->is_checked;
 	new_settings.stop_after_min = atoi(sv->stop_after_textbox->text);
 	new_settings.min_seconds_to_save = atoi(sv->min_time_save_textbox->text);
+	new_settings.save_on_term_signal = sv->save_on_term->is_checked;
 
-	if(sv && sv->ctx && sv->save_settings_func) {
+	if(sv->ctx && sv->save_settings_func) {
 		sv->save_settings_func(sv->ctx, new_settings);
 	}
 };
@@ -69,7 +74,7 @@ struct settings_view *create_settings_view(struct AppContext *ctx,
 	view->min_time_save_textbox = ui_add_textbox(ui, 26, 13, 21, 2, buf, NULL);
 
 	ui_add_label(ui, 35, 5, 21, 2, "Save on TERM, sec");
-	view->save_on_term = ui_add_checkbox(ui, 58, 5, 0, NULL);
+	view->save_on_term = ui_add_checkbox(ui, 58, 5, ctx->settings.save_on_term_signal, NULL);
 
 	ui_add_button(ui, 3, 17, 5, 2, "Save", on_save_settings, view);
 

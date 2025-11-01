@@ -36,12 +36,15 @@ int get_time_intervals(struct TimeInterval time_period, struct TimeInterval **in
  * And interval is not zero */
 int save_active_inteval_time(struct Timer *, int min_seconds_to_save);
 
-void term_handler(int);
+void termination_signal_handler(int);
+
+/* Global pointer to current app context*/
+struct AppContext *s_ctx_ptr = NULL;
 
 int main(void)
 {
 	struct sigaction sa;
-	sa.sa_handler = term_handler;
+	sa.sa_handler = termination_signal_handler;
 	if(sigaction(SIGINT, &sa, NULL) < 0){
 		fprintf(stderr, "Failed to setup SIGTERM handler\n");
 	}
@@ -57,6 +60,7 @@ int main(void)
 	timer_reset(&timer);
 
 	struct AppContext ctx;
+	s_ctx_ptr = &ctx;
 	ctx.timer = &timer;
 	ctx.view = TIMER_VIEW;
 	ctx.day_shift = 0;
@@ -66,6 +70,7 @@ int main(void)
 		ctx.settings.stopped_on_app_start = 1;
 		ctx.settings.stop_after_min = -1; // Do not stop at all
 		ctx.settings.min_seconds_to_save = 0;
+		ctx.settings.save_on_term_signal = 0;
 	}
 
 	struct settings_view *sv = create_settings_view(&ctx, save_settings, db_get_settings);
@@ -243,7 +248,15 @@ int save_active_inteval_time(struct Timer *timer, int min_seconds_to_save)
 	return db_save_time(timer->last_active_interval);
 }
 
-void term_handler(int sig_num) {
+void termination_signal_handler(int sig_num) {
+	if(s_ctx_ptr && s_ctx_ptr->settings.save_on_term_signal ) {
+		if(!s_ctx_ptr->timer) {
+			fprintf(stderr, "termination_signal_handler: timer ptr is NULL\n");
+		}
+		timer_stop(s_ctx_ptr->timer);
+		save_active_inteval_time(s_ctx_ptr->timer, s_ctx_ptr->settings.min_seconds_to_save);
+	}
+
 	render_dispose();
 	db_dispose();
 	exit(0);

@@ -160,12 +160,13 @@ int db_get_time(struct TimeInterval interval, struct TimeInterval **time_ranges,
 	*size = _time_ranges.size;
 
 	// Trim do fit in one day
-	struct TimeInterval *d = _time_ranges.data;
-	for(int i = 0; i < _time_ranges.size; ++i) {
-		if(d->start < start)
-			d->start = start;
-		if(d->end > end)
-			d->end = end;
+	struct TimeInterval *trimmed_range = _time_ranges.data;
+	struct TimeInterval *guard = trimmed_range + _time_ranges.size;
+	for(; trimmed_range < guard; ++trimmed_range) {
+		if(trimmed_range->start < start)
+			trimmed_range->start = start;
+		if(trimmed_range->end > end)
+			trimmed_range->end = end;
 	}
 
 	return 0;

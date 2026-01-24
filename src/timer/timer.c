@@ -66,10 +66,12 @@ struct TimeInterval get_day_interval(time_t time, int day_shift)
 	local_time->tm_min = 0;
 	local_time->tm_hour = 0;
 	local_time->tm_mday += day_shift;
-
 	time_t start = mktime(local_time);
 
-	local_time->tm_mday += 1;
+	// Whole current day
+	local_time->tm_hour = 23;
+	local_time->tm_min  = 59;
+	local_time->tm_sec  = 59;
 	time_t end = mktime(local_time);
 
 	struct TimeInterval day_interval;

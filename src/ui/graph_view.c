@@ -84,8 +84,14 @@ void render_graph_view(struct graph_view * view)
 
 		buf = localtime(&c->start);
 		int start_offset = buf->tm_hour * GRAPH_ROWS + buf->tm_min / MINUTES_BLOCK;
+		int start_day = buf->tm_mday;
 
 		buf = localtime(&c->end);
+		if(start_day < buf->tm_mday){
+			buf->tm_hour = 23;
+			buf->tm_min = 59;
+			buf->tm_mday -= 1;
+		}
 		int end_offset = buf->tm_hour * GRAPH_ROWS + buf->tm_min / MINUTES_BLOCK;
 
 		total += difftime(c->end, c->start);

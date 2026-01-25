@@ -67,8 +67,6 @@ void render_graph_view(struct graph_view * view)
 
 	render_clear();
 
-	char table[GRAPH_COLS][GRAPH_ROWS] = {0};
-
 	for (int min = 0; min < GRAPH_ROWS; ++min)
 		render_ftext(1, lines - 3 - min, "%d", 5 * (min + 1));
 
@@ -94,10 +92,17 @@ void render_graph_view(struct graph_view * view)
 		}
 		int end_offset = buf->tm_hour * GRAPH_ROWS + buf->tm_min / MINUTES_BLOCK;
 
-		total += difftime(c->end, c->start);
+		long curr_diff = difftime(c->end, c->start);
+		total += curr_diff;
+
+		//TODO: Do better grouping
+		short fg = curr_diff > 5*60 ? COLOR_MEDIUM_GREEN : COLOR_DARK_GREEN;
+		set_color(fg, -1);
 
 		for (int k = start_offset; k <= end_offset; ++k)
-			table[k / GRAPH_ROWS][k % GRAPH_ROWS] = 1;
+			render_cell(5 + COLS_WIDTH * (k / GRAPH_ROWS) + 1, lines - 3 - (k % GRAPH_ROWS), '#');
+
+		reset_colors();
 	}
 
 
@@ -110,13 +115,6 @@ void render_graph_view(struct graph_view * view)
     	long seconds = total % 60;
 
 	render_ftext(1, 2, "Total time worked: %luh %lum %lus",  hours, minutes, seconds);
-
-	for (int i = 0; i < GRAPH_COLS; ++i) {
-		for (int j = 0; j < GRAPH_ROWS; ++j) {
-			if (table[i][j] > 0)
-				render_cell(5 + COLS_WIDTH * i + 1, lines - 3 - j, '#');
-		}
-	}
 
 	render_update();
 }

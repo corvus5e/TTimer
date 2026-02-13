@@ -1,3 +1,4 @@
+CC:=clang
 build_dir=build
 target=ttimer
 src=src/main.c \
@@ -11,7 +12,7 @@ src=src/main.c \
     src/HomeTUI/home_tui.c \
 
 main: prepare $(build_dir)/libsqlite3.a
-	clang -std=c11 -g -Wall \
+	$(CC) -std=c11 -Wall \
 		-D_POSIX_C_SOURCE=199309L \
 		-I ./src/ $(src) \
 		-lncurses -lm -lsqlite3 \
@@ -26,10 +27,13 @@ prepare:
 	ar rcs $(build_dir)/libsqlite3.a $(build_dir)/sqlite3.o
 
  $(build_dir)/sqlite3.o:
-	gcc -c -std=c11 -Wall src/db/sqlite3/sqlite3.c -o $(build_dir)/sqlite3.o
+	$(CC) -c -std=c11 -Wall src/db/sqlite3/sqlite3.c -o $(build_dir)/sqlite3.o
 
 profile: $(build_dir)/libsqlite3.a # for gprof
-	gcc -std=c11 -Wall $(src) -pg -lncurses -lpthread -L$(build_dir) -lsqlite3
+	$(CC) -std=c11 -Wall $(src) -pg -lncurses -lpthread -L$(build_dir) -lsqlite3
+
+clean:
+	rm -rdf $(build_dir)
 
 run:
 	./$(build_dir)/$(target) 2> data/std_err.log

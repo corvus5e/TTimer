@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <timer/timer.h>
 #include <HomeTUI/home_tui.h>
@@ -53,12 +54,16 @@ int handle_input_timer_view(struct timer_view *view, int input)
 	return 0;
 }
 
+#define BIG_TIMER_WIDTH 48
+#define BIG_TIME_HEIGH 7
+
 void render_timer_view(struct timer_view *view)
 {
-	int w, h;
-	get_window_size(&w, &h);
-	int x = (w - 48) / 2;
-	int y = (h - 7) / 2;
+	int cols = 0;
+	int lines = 0;
+	get_window_size(&cols, &lines);
+	int x = (cols - BIG_TIMER_WIDTH) / 2;
+	int y = (lines - BIG_TIME_HEIGH) / 2;
 
 	render_clear();
 
@@ -92,8 +97,13 @@ void render_timer_view(struct timer_view *view)
 		column_shift += t->width;
 	}
 
-	int cols, lines;
-	get_window_size(&cols, &lines);
+	// Print current time
+	time_t now = time(NULL);
+	const char *time_str = ctime(&now);
+	int time_len = strlen(time_str);
+	x = (cols - time_len) / 2;
+	y += BIG_TIME_HEIGH + 2;
+	render_ftext(x, y, "%s", time_str);
 
 	if (ts->paused) {
 		for (int i = 4; i < cols - 4; ++i) {

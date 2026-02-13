@@ -8,7 +8,7 @@ void timer_reset(struct Timer *ts)
 	ts->paused = 0;
 	ts->start = 0;
 	ts->active_elapsed_time = 0;
-	ts->total_paused_time_sec = 0;
+	ts->previous_eplapsed_time = 0;
 	ts->last_active_interval.start = 0;
 	ts->last_active_interval.end = 0;
 }
@@ -16,8 +16,8 @@ void timer_reset(struct Timer *ts)
 void timer_update(struct Timer *ts)
 {
 	if (!ts->stopped && !ts->paused) {
-		ts->active_elapsed_time = (int)difftime(time(NULL), ts->start) -
-				       ts->total_paused_time_sec;
+		ts->last_active_interval.end = time(NULL);
+		ts->active_elapsed_time = ts->previous_eplapsed_time + (int)difftime(ts->last_active_interval.end, ts->last_active_interval.start);
 	}
 }
 
@@ -28,7 +28,7 @@ void timer_start(struct Timer *ts)
 
 	timer_reset(ts);
 	ts->start = time(NULL);
-	ts->last_active_interval.start = ts->start;
+	ts->last_active_interval.start = ts->last_active_interval.end = ts->start;
 	ts->stopped = 0;
 }
 
@@ -48,11 +48,9 @@ void timer_pause(struct Timer *ts)
 	if (!ts->paused) { /* Pause */
 		ts->paused = 1;
 		ts->last_active_interval.end = time(NULL);
+		ts->previous_eplapsed_time += (int)difftime(ts->last_active_interval.end, ts->last_active_interval.start);
 	} else {          /* Resume */
-		time_t previouse_active_end = ts->last_active_interval.end;
-		ts->last_active_interval.start = time(NULL);
-		ts->total_paused_time_sec +=
-		    difftime(ts->last_active_interval.start, previouse_active_end);
+		ts->last_active_interval.start = ts->last_active_interval.end = time(NULL);
 		ts->paused = 0;
 	}
 }

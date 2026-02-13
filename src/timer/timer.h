@@ -13,7 +13,7 @@ struct Timer {
 	int paused;
 	time_t start;
 	int active_elapsed_time;
-	int total_paused_time_sec;
+	int previous_eplapsed_time;
 	struct TimeInterval last_active_interval;
 };
 

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "HomeTUI/home_tui.h"
+#include "char_codes.h"
 
 #define SECS_DAY 86400
 
@@ -100,7 +101,7 @@ void render_graph_view(struct graph_view * view)
 		set_color(fg, -1);
 
 		for (int k = start_offset; k <= end_offset; ++k)
-			render_cell(5 + COLS_WIDTH * (k / GRAPH_ROWS) + 1, lines - 3 - (k % GRAPH_ROWS), '#');
+			render_cell(5 + COLS_WIDTH * (k / GRAPH_ROWS) + 1, lines - 3 - (k % GRAPH_ROWS), GRAPH_SHORT_CELL);
 
 		reset_colors();
 	}

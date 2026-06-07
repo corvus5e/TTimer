@@ -6,6 +6,7 @@
 
 #include <timer/timer.h>
 #include <HomeTUI/home_tui.h>
+#include "char_codes.h"
 
 #define BUF_LEN 10
 
@@ -107,19 +108,19 @@ void render_timer_view(struct timer_view *view)
 
 	if (ts->paused) {
 		for (int i = 4; i < cols - 4; ++i) {
-			render_cell(i, 2, '-');
-			render_cell(i, lines - 3, '-');
+			render_cell(i, 2, TIMER_H_BORDER);
+			render_cell(i, lines - 3, TIMER_H_BORDER);
 		}
 
 		 for (int i = 3; i < lines - 3; ++i) {
-		 	render_cell(3, i, '|');
-		 	render_cell(cols - 4, i, '|');
+		 	render_cell(3, i, TIMER_V_BORDER);
+		 	render_cell(cols - 4, i, TIMER_V_BORDER);
 		 }
 
-		 render_cell(3, 2, '*');
-		 render_cell(cols - 4, 2, '*');
-		 render_cell(3, lines - 3, '*');
-		 render_cell(cols - 4, lines - 3, '*');
+		 render_cell(3, 2, TIMER_UL_CORNER);
+		 render_cell(cols - 4, 2, TIMER_UR_CORNER);
+		 render_cell(3, lines - 3, TIMER_LL_CORNER);
+		 render_cell(cols - 4, lines - 3, TIMER_LR_CORNER);
 
 		render_text(4, lines - 4, "Paused");
 	} else if (ts->stopped && ts->active_elapsed_time == 0 /*Initial start*/) {

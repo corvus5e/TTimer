@@ -15,7 +15,8 @@ main: prepare $(build_dir)/libsqlite3.a
 	$(CC) -std=c11 -Wall \
 		-D_POSIX_C_SOURCE=199309L \
 		-I ./src/ $(src) \
-		-lncurses -lm -lsqlite3 \
+		$(shell ncursesw6-config --cflags --libs) \
+		-lm -lsqlite3 \
 		-L$(build_dir) \
 		-o $(build_dir)/$(target)
 

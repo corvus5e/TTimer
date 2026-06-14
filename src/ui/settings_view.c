@@ -27,10 +27,10 @@ static void on_save_settings(struct ui_button *b, void * arg)
 	}
 
 	struct AppSettings new_settings;
-	new_settings.stopped_on_app_start = sv->stopped_on_start_check_box->is_checked;
-	new_settings.stop_after_min = atoi(sv->stop_after_textbox->text);
-	new_settings.min_seconds_to_save = atoi(sv->min_time_save_textbox->text);
-	new_settings.save_on_term_signal = sv->save_on_term->is_checked;
+	new_settings.stopped_on_app_start = ui_is_checked(sv->stopped_on_start_check_box);
+	new_settings.stop_after_min = atoi(ui_get_text(UI_BOX(sv->stop_after_textbox)));
+	new_settings.min_seconds_to_save = atoi(ui_get_text(UI_BOX(sv->min_time_save_textbox)));
+	new_settings.save_on_term_signal = ui_is_checked(sv->save_on_term);
 
 	if(sv->ctx && sv->save_settings_func) {
 		sv->save_settings_func(sv->ctx, new_settings);
@@ -59,21 +59,21 @@ struct settings_view *create_settings_view(struct AppContext *ctx,
 		return NULL;
 	}
 
-	ui_add_label(ui, 3, 5, 21, 2, "Stopped on app start");
+	ui_add_box(ui, 3, 5, 21, 2, "Stopped on app start");
 	view->stopped_on_start_check_box = ui_add_checkbox(
 	    ui, 26, 5, ctx->settings.stopped_on_app_start, NULL);
 
 	char buf[100];
 	sprintf(buf, "%d", ctx->settings.stop_after_min);
 
-	ui_add_label(ui, 3, 9, 21, 2, "Stop after, min");
+	ui_add_box(ui, 3, 9, 21, 2, "Stop after, min");
 	view->stop_after_textbox =  ui_add_textbox(ui, 26, 9, 21, 2, buf, NULL);
 
 	sprintf(buf, "%d", ctx->settings.min_seconds_to_save);
-	ui_add_label(ui, 3, 13, 21, 2, "Min save time, sec");
+	ui_add_box(ui, 3, 13, 21, 2, "Min save time, sec");
 	view->min_time_save_textbox = ui_add_textbox(ui, 26, 13, 21, 2, buf, NULL);
 
-	ui_add_label(ui, 35, 5, 21, 2, "Save on TERM, sec");
+	ui_add_box(ui, 35, 5, 21, 2, "Save on TERM, sec");
 	view->save_on_term = ui_add_checkbox(ui, 58, 5, ctx->settings.save_on_term_signal, NULL);
 
 	ui_add_button(ui, 3, 17, 5, 2, "Save", on_save_settings, view);

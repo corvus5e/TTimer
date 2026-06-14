@@ -58,13 +58,15 @@ int handle_input_timer_view(struct timer_view *view, int input)
 #define BIG_TIMER_WIDTH 48
 #define BIG_TIME_HEIGH 7
 
+void render_time_with_built_in_textures(const char *buf, int x, int y);
+
 void render_timer_view(struct timer_view *view)
 {
 	int cols = 0;
 	int lines = 0;
 	get_window_size(&cols, &lines);
-	int x = (cols - BIG_TIMER_WIDTH) / 2;
-	int y = (lines - BIG_TIME_HEIGH) / 2;
+	int x = (cols - view->ctx->w * 8/*"%02d:%02d:%02d"*/) / 2;
+	int y = (lines - view->ctx->h) / 2;
 
 	render_clear();
 
@@ -80,22 +82,16 @@ void render_timer_view(struct timer_view *view)
 	if ((len = snprintf(&buf[0], BUF_LEN, "%02d:%02d:%02d", hours, minutes, seconds)) < 0)
 		return;
 
-	int column_shift = 0;
-
-	for (char *s = buf; *s; ++s) {
-
-		const struct Texture *t = &_textures[*s == ':' ? 10 : *s - '0'];
-
-		const char *d = t->data;
-
-		for (int i = 0; i < t->heigh; ++i) {
-			for (int j = 0; j < t->width; ++j) {
-				render_cell(j + column_shift + x, i + y,
-					*(d + i * t->width + j));
-			}
+	if(!view->ctx->textures){
+		render_time_with_built_in_textures(buf, x, y);
+	}
+	else {
+		int i = 0;
+		for (const char *s = buf; *s; ++s) {
+			UI_CHAR *data = get_texture(view->ctx->textures, *s == ':' ? 10 : *s - '0');
+			render_block(data, x + i*view->ctx->w, y, view->ctx->w, view->ctx->h);
+			++i;
 		}
-
-		column_shift += t->width;
 	}
 
 	// Print current time
@@ -133,4 +129,25 @@ void render_timer_view(struct timer_view *view)
 void dispose_timer_view(struct timer_view *view)
 {
 	free(view);
+}
+
+
+void render_time_with_built_in_textures(const char *buf, int x, int y) {
+	int column_shift = 0;
+
+	for (const char *s = buf; *s; ++s) {
+
+		const struct Texture *t = &_textures[*s == ':' ? 10 : *s - '0'];
+
+		const char *d = t->data;
+
+		for (int i = 0; i < t->heigh; ++i) {
+			for (int j = 0; j < t->width; ++j) {
+				render_cell(j + column_shift + x, i + y,
+					*(d + i * t->width + j));
+			}
+		}
+
+		column_shift += t->width;
+	}
 }

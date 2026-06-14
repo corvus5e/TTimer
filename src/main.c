@@ -64,6 +64,17 @@ int main(void)
 	ctx.timer = &timer;
 	ctx.view = TIMER_VIEW;
 	ctx.day_shift = 0;
+	ctx.textures = NULL;
+
+	const struct TextureAtlas *textures = load_figlet_texture("src/HomeTUI/assets/mono12.txt");
+	if (!textures) {
+		fprintf(stderr, "Failed to load fonts\n");
+	}
+	else {
+		get_texture_dims(textures, &ctx.n, &ctx.w, &ctx.h);
+		ctx.textures = textures;
+	}
+
 
 	if (db_get_settings(&ctx.settings) != 0) {
 		fprintf(stderr, "Failed to read settings. Using defaults\n");

@@ -15,6 +15,8 @@ struct AppContext {
 	enum AppView view;
 	struct AppSettings settings;
 	int day_shift;
+	const struct TextureAtlas *textures;
+	int w, h, n; //TODO: Replace with Texture struct
 };
 
 typedef int (*AppAction)(struct AppContext *);

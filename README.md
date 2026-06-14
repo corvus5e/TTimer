@@ -5,8 +5,6 @@
 
 **TTimer** is a lightweight, terminal-based timer and time tracking application built in C. Designed for developers and terminal enthusiasts, it helps you track time spent on tasks with a clean, distraction-free interface.
 
-![TTimer UI Placeholder](https://via.placeholder.com/800x400.png?text=TTimer+Terminal+Interface)
-
 ## ✨ Features
 
 - **Real-time Tracking:** Accurate time measurement with a custom-built TUI abstraction (`HomeTUI`).
@@ -65,4 +63,3 @@ Ensure you have the following installed:
 
 ---
 
-*Made with ❤️ for the Terminal.*

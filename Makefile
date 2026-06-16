@@ -1,8 +1,9 @@
-CC:=clang
-build_dir=build
-target=ttimer
-hometui_dir=src/HomeTUI
-hometui_lib=$(hometui_dir)/bin/libhome_tui.a
+include config.mk
+
+build_dir := build
+target := ttimer
+hometui_dir:= src/HomeTUI
+hometui_lib:= $(hometui_dir)/bin/libhome_tui.a
 
 src=src/main.c \
     src/timer/timer.c \
@@ -13,14 +14,15 @@ src=src/main.c \
     src/db/db_sqlite.c \
 
 main: prepare $(build_dir)/libsqlite3.a $(hometui_lib)
-	$(CC) -std=c11 -Wall \
+	$(CC) $(COMPILE_FLAGS) \
 		-D_POSIX_C_SOURCE=199309L \
 		-DUSE_UTF8 \
 		-I ./src/ $(src) \
-		$(shell ncursesw6-config --cflags --libs) \
-		-lm -lsqlite3 \
+		$(NCURSES_CFLAGS) \
 		-L$(build_dir) \
 		-L$(hometui_dir)/bin -lhome_tui \
+		-lm -lsqlite3 \
+		$(NCURSES_LIBS) \
 		-o $(build_dir)/$(target)
 
 prepare:
@@ -28,7 +30,7 @@ prepare:
 	mkdir -p data
 
 $(hometui_lib):
-	$(MAKE) -C $(hometui_dir) UTF-8_lib CC=$(CC)
+	$(MAKE) -C $(hometui_dir) UTF-8_lib
 
  $(build_dir)/libsqlite3.a: $(build_dir)/sqlite3.o
 	ar rcs $(build_dir)/libsqlite3.a $(build_dir)/sqlite3.o
@@ -37,7 +39,12 @@ $(hometui_lib):
 	$(CC) -c -std=c11 -Wall src/db/sqlite3/sqlite3.c -o $(build_dir)/sqlite3.o
 
 profile: $(build_dir)/libsqlite3.a $(hometui_lib) # for gprof
-	$(CC) -std=c11 -Wall -DUSE_UTF8 $(src) -pg -lncurses -lpthread -L$(build_dir) -lsqlite3 -L$(hometui_dir)/bin -lhome_tui
+	$(CC) $(COMPILE_FLAGS) -DUSE_UTF8 $(src) -pg \
+		$(NCURSES_CFLAGS) \
+		-L$(build_dir) -lsqlite3 \
+		-L$(hometui_dir)/bin -lhome_tui \
+		-lpthread \
+		$(NCURSES_LIBS)
 
 clean:
 	rm -rdf $(build_dir)

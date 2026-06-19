@@ -13,6 +13,17 @@ src=src/main.c \
     src/ui/timer_view.c \
     src/db/db_sqlite.c \
 
+PLATFORM_LFLAGS := 
+
+# OS Detection
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	src += src/os_utils/os_utils_linux.c
+	PLATFORM_LFLAGS += -lX11 -lXss
+else
+	src += src/os_utils/os_utils_stub.c
+endif
+
 main: prepare $(build_dir)/libsqlite3.a $(hometui_lib)
 	$(CC) $(COMPILE_FLAGS) \
 		-D_POSIX_C_SOURCE=199309L \
@@ -22,6 +33,7 @@ main: prepare $(build_dir)/libsqlite3.a $(hometui_lib)
 		-L$(build_dir) \
 		-L$(hometui_dir)/bin -lhome_tui \
 		-lm -lsqlite3 \
+		$(PLATFORM_LFLAGS) \
 		$(NCURSES_LIBS) \
 		-o $(build_dir)/$(target)
 
@@ -39,12 +51,17 @@ $(hometui_lib):
 	$(CC) -c -std=c11 -Wall src/db/sqlite3/sqlite3.c -o $(build_dir)/sqlite3.o
 
 profile: $(build_dir)/libsqlite3.a $(hometui_lib) # for gprof
-	$(CC) $(COMPILE_FLAGS) -DUSE_UTF8 $(src) -pg \
+	$(CC) $(COMPILE_FLAGS) \
+		-D_POSIX_C_SOURCE=199309L \
+		-DUSE_UTF8 \
+		-I ./src/ $(src) -pg \
 		$(NCURSES_CFLAGS) \
-		-L$(build_dir) -lsqlite3 \
+		-L$(build_dir) \
 		-L$(hometui_dir)/bin -lhome_tui \
-		-lpthread \
-		$(NCURSES_LIBS)
+		-lm -lsqlite3 \
+		$(PLATFORM_LFLAGS) \
+		$(NCURSES_LIBS) \
+		-lpthread
 
 clean:
 	rm -rdf $(build_dir)

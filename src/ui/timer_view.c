@@ -46,13 +46,11 @@ int handle_input_timer_view(struct timer_view *view, int input)
 		view->on_pause_resume(view->ctx);
 		return 1;
 	}
-
-	if(input == IDLE_INPUT) {
+	else {
 		view->update_timer(view->ctx);
-		return 1;
 	}
 
-	return 0;
+	return 1;
 }
 
 #define BIG_TIMER_WIDTH 48

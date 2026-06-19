@@ -14,7 +14,8 @@ struct AppContext {
 	struct Timer *timer;
 	enum AppView view;
 	struct AppSettings settings;
-	int day_shift;
+	int idle_paused;
+	int day_shift; //TODO: Move to graph_view ?
 	const struct TextureAtlas *textures;
 	int w, h, n; //TODO: Replace with Texture struct
 };

@@ -4,10 +4,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
 #include <signal.h>
 
 #include <HomeTUI/home_tui.h>
+#include <os_utils/os_utils.h>
 #include <app_context.h>
 #include <timer/timer.h>
 
@@ -19,6 +21,7 @@
 #include <ui/help_view.h>
 
 #define EXIT_APP 2
+#define VIEW_UPDATED 3
 #define IDLE_INPUT -1 // TODO: Put into HomeTUI
 
 int handle_input_global(struct AppContext *context, int *altered_input);
@@ -35,6 +38,8 @@ int get_time_intervals(struct TimeInterval time_period, struct TimeInterval **in
 /* Saves time if last active interval is valid (timer is paused or stopped)
  * And interval is not zero */
 int save_active_inteval_time(struct Timer *, int min_seconds_to_save);
+
+int handle_idle_time(struct AppContext *ctx);
 
 void termination_signal_handler(int);
 
@@ -65,6 +70,7 @@ int main(void)
 	ctx.view = TIMER_VIEW;
 	ctx.day_shift = 0;
 	ctx.textures = NULL;
+	ctx.idle_paused = 0;
 
 	const struct TextureAtlas *textures = load_figlet_texture("src/HomeTUI/assets/mono12.txt");
 	if (!textures) {
@@ -107,9 +113,9 @@ int main(void)
 
 	int input = IDLE_INPUT;
 
-	for (int status = 1;;) {
+	for (int event = 1;;) {
 		/* Render views */
-		if (status) {
+		if (event) {
 			switch (ctx.view) {
 			case TIMER_VIEW:;
 				render_timer_view(tv);
@@ -129,26 +135,26 @@ int main(void)
 		input = get_keyboard_input();
 
 		//TODO: Think on the return value from this handler
-		status = handle_input_global(&ctx, &input);
+		event = handle_input_global(&ctx, &input);
 
-		if (status == EXIT_APP)
+		if (event == EXIT_APP)
 			break;
 
-		if(status)
+		if (event == VIEW_UPDATED)
 			continue;
 
 		/* Handle input */
 		switch (ctx.view) {
 		case TIMER_VIEW:
-			status = handle_input_timer_view(tv, input);
+			event = handle_input_timer_view(tv, input);
 			break;
 		case HELP_VIEW: /* Nothing to handle here */
 			break;
 		case GRAPH_VIEW:
-			status = handle_input_graph_view(gv, input);
+			event = handle_input_graph_view(gv, input);
 			break;
 		case SETTINGS_VIEW:
-			status = handle_input_settings_view(sv, input);
+			event = handle_input_settings_view(sv, input);
 			break;
 		}
 	}
@@ -163,6 +169,7 @@ int main(void)
 
 	render_dispose();
 	db_dispose();
+	dispose_os_resources();
 
 	return 0;
 }
@@ -172,7 +179,7 @@ int handle_input_global(struct AppContext *ctx, int *input_key)
 	if (*input_key == ESC) {
 		ctx->view = TIMER_VIEW;
 		*input_key = IDLE_INPUT;
-		return 0;
+		return VIEW_UPDATED;
 	}
 
 	if (*input_key == 'q') {
@@ -188,18 +195,18 @@ int handle_input_global(struct AppContext *ctx, int *input_key)
 	case 'g':
 		ctx->view = GRAPH_VIEW;
 		*input_key = IDLE_INPUT;
-		return 1;
+		return VIEW_UPDATED;
 	case 'h':
 		ctx->view = HELP_VIEW;
 		*input_key = IDLE_INPUT;
-		return 1;
+		return VIEW_UPDATED;
 	case 's':
 		ctx->view = SETTINGS_VIEW;
 		*input_key = IDLE_INPUT;
-		return 1;
+		return VIEW_UPDATED;
 	}
 
-	return 0;
+	return handle_idle_time(ctx);
 }
 
 /* View callbacks */
@@ -220,6 +227,7 @@ int timer_update_callback(struct AppContext *ctx)
 
 int pause_resume(struct AppContext *ctx)
 {
+	ctx->idle_paused = 0; // Reset idle-paused state on manual interaction
 	if (ctx->timer->stopped) {
 		timer_start(ctx->timer);
 	} else {
@@ -257,6 +265,31 @@ int save_active_inteval_time(struct Timer *timer, int min_seconds_to_save)
 		return 1;
 
 	return db_save_time(timer->last_active_interval);
+}
+
+int handle_idle_time(struct AppContext *ctx) {
+	if (ctx->timer->stopped) {
+		return 0;
+	}
+
+	const float limit = 5.0f;
+	float it = idle_time();
+	if(!ctx->idle_paused) {
+		if (!ctx->timer->paused && it > limit) {
+			pause_resume(ctx);
+			ctx->idle_paused = 1;
+			return VIEW_UPDATED;
+		}
+	}
+	else {
+		if (ctx->timer->paused && it < limit) {
+			pause_resume(ctx);
+			ctx->idle_paused = 0;
+			return VIEW_UPDATED;
+		}
+	}
+
+	return 0;
 }
 
 void termination_signal_handler(int sig_num) {

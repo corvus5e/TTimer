@@ -22,19 +22,19 @@ struct timer_view {
 	AppAction update_timer;
 };
 
-int handle_input_timer_view(struct view **, int input_key);
+int handle_input_timer_view(struct view *, int input_key);
 
-void render_timer_view(const struct view **);
+void render_timer_view(const struct view *);
 
-void dispose_timer_view(struct view **);
+void dispose_timer_view(struct view *);
 
-struct view **create_timer_view(struct AppContext *ctx, AppAction on_pause_resume, AppAction update_timer)
+struct view *create_timer_view(struct AppContext *ctx, AppAction on_pause_resume, AppAction update_timer)
 {
 	struct timer_view *timer_view = (struct timer_view *)malloc(sizeof(struct timer_view));
 	if(!timer_view)
 		return NULL;
 
-	timer_view->view = view_create(render_timer_view, handle_input_timer_view, dispose_timer_view);
+	timer_view->view = view_create(render_timer_view, handle_input_timer_view, dispose_timer_view, timer_view);
 
 	if(!timer_view->view) {
 		return NULL;
@@ -47,12 +47,17 @@ struct view **create_timer_view(struct AppContext *ctx, AppAction on_pause_resum
 	timer_view->on_pause_resume = on_pause_resume;
 	timer_view->update_timer = update_timer;
 
-	return &timer_view->view;
+	return timer_view->view;
 }
 
-int handle_input_timer_view(struct view **v, int input)
+int handle_input_timer_view(struct view *v, int input)
 {
-	struct timer_view* view = container_of(v, struct timer_view, view);
+	struct timer_view* view = get_owner(v);
+
+	if(!view) {
+		fprintf(stderr, "Owner is NULL");
+		return 0;
+	}
 
 	if (input == ' ') {
 		view->on_pause_resume(view->ctx);
@@ -70,8 +75,13 @@ int handle_input_timer_view(struct view **v, int input)
 
 void render_time_with_built_in_textures(const char *buf, int x, int y);
 
-void render_timer_view(const struct view **v) {
-	const struct timer_view *view = container_of(v, struct timer_view, view);
+void render_timer_view(const struct view *v) {
+	const struct timer_view *view = get_owner(v);
+	if(!view) {
+		fprintf(stderr, "Owner is NULL");
+		return;
+	}
+
 	int cols = 0;
 	int lines = 0;
 	get_window_size(&cols, &lines);
@@ -134,9 +144,14 @@ void render_timer_view(const struct view **v) {
 	render_update();
 }
 
-void dispose_timer_view(struct view **v)
+void dispose_timer_view(struct view *v)
 {
-	struct timer_view *view = container_of(v, struct timer_view, view);
+	struct timer_view *view = get_owner(v);
+	if(!view) {
+		fprintf(stderr, "Owner is NULL");
+		return;
+	}
+
 	free(view->view);
 	free(view);
 }

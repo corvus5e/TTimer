@@ -94,7 +94,7 @@ int main(void)
 		return 1;
 	}
 
-	struct view **tv = create_timer_view(&ctx, pause_resume, timer_update_callback);
+	struct view *tv = create_timer_view(&ctx, pause_resume, timer_update_callback);
 	if (!tv) {
 		fprintf(stderr, "Failed to create graph view\n");
 		return 1;

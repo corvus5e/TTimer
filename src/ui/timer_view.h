@@ -11,6 +11,6 @@ struct Texture {
 	int heigh;
 };
 
-struct view **create_timer_view(struct AppContext *ctx, AppAction on_pause_resume, AppAction timer_update);
+struct view *create_timer_view(struct AppContext *ctx, AppAction on_pause_resume, AppAction timer_update);
 
 #endif

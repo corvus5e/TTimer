@@ -68,14 +68,12 @@ void render_timer_view(struct timer_view *view)
 
 	render_clear();
 
-	struct Timer *ts = view->ctx->timer;
-
 	char buf[BUF_LEN];
 	int len = 0;
 
-	int seconds = ts->active_elapsed_time % 60;
-	int minutes = (ts->active_elapsed_time / 60) % 60;
-	int hours = ts->active_elapsed_time / 3600;
+	int seconds = view->ctx->timer.active_elapsed_time % 60;
+	int minutes = (view->ctx->timer.active_elapsed_time / 60) % 60;
+	int hours = view->ctx->timer.active_elapsed_time / 3600;
 
 	if ((len = snprintf(&buf[0], BUF_LEN, "%02d:%02d:%02d", hours, minutes, seconds)) < 0)
 		return;
@@ -100,7 +98,7 @@ void render_timer_view(struct timer_view *view)
 	y += BIG_TIME_HEIGH + 2;
 	render_ftext(x, y, "%s", time_str);
 
-	if (ts->paused) {
+	if (view->ctx->timer.paused) {
 		for (int i = 4; i < cols - 4; ++i) {
 			render_cell(i, 2, TIMER_H_BORDER);
 			render_cell(i, lines - 3, TIMER_H_BORDER);
@@ -117,7 +115,7 @@ void render_timer_view(struct timer_view *view)
 		 render_cell(cols - 4, lines - 3, TIMER_LR_CORNER);
 
 		render_text(4, lines - 4, "Paused");
-	} else if (ts->stopped && ts->active_elapsed_time == 0 /*Initial start*/) {
+	} else if (view->ctx->timer.stopped && view->ctx->timer.active_elapsed_time == 0 /*Initial start*/) {
 		render_text(4, lines - 4, "Press space to start");
 	}
 

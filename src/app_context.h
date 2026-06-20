@@ -1,6 +1,8 @@
 #ifndef _TTIMER_APP_CONTEXT_H_
 #define _TTIMER_APP_CONTEXT_H_
 
+#include "timer/timer.h"
+
 enum AppView { TIMER_VIEW, HELP_VIEW, GRAPH_VIEW, SETTINGS_VIEW};
 
 struct AppSettings {
@@ -11,7 +13,7 @@ struct AppSettings {
 };
 
 struct AppContext {
-	struct Timer *timer;
+	struct Timer timer;
 	enum AppView view;
 	struct AppSettings settings;
 	int idle_paused;
@@ -21,5 +23,7 @@ struct AppContext {
 };
 
 typedef int (*AppAction)(struct AppContext *);
+
+struct AppContext create_app_context();
 
 #endif

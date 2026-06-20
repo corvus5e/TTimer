@@ -22,7 +22,6 @@
 
 #define EXIT_APP 2
 #define VIEW_UPDATED 3
-#define IDLE_INPUT -1 // TODO: Put into HomeTUI
 
 int handle_input_global(struct AppContext *context, int *altered_input);
 
@@ -61,16 +60,8 @@ int main(void)
 		return 1;
 	}
 
-	struct Timer timer;
-	timer_reset(&timer);
-
-	struct AppContext ctx;
+	struct AppContext ctx = create_app_context();
 	s_ctx_ptr = &ctx;
-	ctx.timer = &timer;
-	ctx.view = TIMER_VIEW;
-	ctx.day_shift = 0;
-	ctx.textures = NULL;
-	ctx.idle_paused = 0;
 
 	const struct TextureAtlas *textures = load_figlet_texture("src/HomeTUI/assets/mono12.txt");
 	if (!textures) {
@@ -109,7 +100,7 @@ int main(void)
 	}
 
 	if (!ctx.settings.stopped_on_app_start)
-		timer_start(&timer);
+		timer_start(&ctx.timer);
 
 	int input = IDLE_INPUT;
 
@@ -183,8 +174,8 @@ int handle_input_global(struct AppContext *ctx, int *input_key)
 	}
 
 	if (*input_key == 'q') {
-		timer_stop(ctx->timer);
-		save_active_inteval_time(ctx->timer, ctx->settings.min_seconds_to_save);
+		timer_stop(&ctx->timer);
+		save_active_inteval_time(&ctx->timer, ctx->settings.min_seconds_to_save);
 		return EXIT_APP;
 	}
 
@@ -215,24 +206,24 @@ int save_settings(struct AppContext *ctx, struct AppSettings new_settings)
 	db_save_settings(new_settings);
 	ctx->settings = new_settings;
 	ctx->view = TIMER_VIEW;
-	timer_update(ctx->timer);
+	timer_update(&ctx->timer);
 	return 0;
 };
 
 int timer_update_callback(struct AppContext *ctx)
 {	//TODO: Is this callback needed, pass timer_update directly ?
-	timer_update(ctx->timer);
+	timer_update(&ctx->timer);
 	return 1;
 }
 
 int pause_resume(struct AppContext *ctx)
 {
 	ctx->idle_paused = 0; // Reset idle-paused state on manual interaction
-	if (ctx->timer->stopped) {
-		timer_start(ctx->timer);
+	if (ctx->timer.stopped) {
+		timer_start(&ctx->timer);
 	} else {
-		timer_pause(ctx->timer);
-		save_active_inteval_time(ctx->timer, ctx->settings.min_seconds_to_save);
+		timer_pause(&ctx->timer);
+		save_active_inteval_time(&ctx->timer, ctx->settings.min_seconds_to_save);
 	}
 
 	return 1;
@@ -268,21 +259,21 @@ int save_active_inteval_time(struct Timer *timer, int min_seconds_to_save)
 }
 
 int handle_idle_time(struct AppContext *ctx) {
-	if (ctx->timer->stopped) {
+	if (ctx->timer.stopped) {
 		return 0;
 	}
 
 	const float limit = 5.0f;
 	float it = idle_time();
 	if(!ctx->idle_paused) {
-		if (!ctx->timer->paused && it > limit) {
+		if (!ctx->timer.paused && it > limit) {
 			pause_resume(ctx);
 			ctx->idle_paused = 1;
 			return VIEW_UPDATED;
 		}
 	}
 	else {
-		if (ctx->timer->paused && it < limit) {
+		if (ctx->timer.paused && it < limit) {
 			pause_resume(ctx);
 			ctx->idle_paused = 0;
 			return VIEW_UPDATED;
@@ -294,11 +285,8 @@ int handle_idle_time(struct AppContext *ctx) {
 
 void termination_signal_handler(int sig_num) {
 	if(s_ctx_ptr && s_ctx_ptr->settings.save_on_term_signal ) {
-		if(!s_ctx_ptr->timer) {
-			fprintf(stderr, "termination_signal_handler: timer ptr is NULL\n");
-		}
-		timer_stop(s_ctx_ptr->timer);
-		save_active_inteval_time(s_ctx_ptr->timer, s_ctx_ptr->settings.min_seconds_to_save);
+		timer_stop(&s_ctx_ptr->timer);
+		save_active_inteval_time(&s_ctx_ptr->timer, s_ctx_ptr->settings.min_seconds_to_save);
 	}
 
 	render_dispose();

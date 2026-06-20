@@ -12,6 +12,7 @@ src=src/main.c \
     src/ui/graph_view.c \
     src/ui/timer_view.c \
     src/db/db_sqlite.c \
+    src/app_context.c \
 
 PLATFORM_LFLAGS := 
 

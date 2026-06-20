@@ -14,30 +14,51 @@
 #define COLS_WIDTH 3
 
 struct graph_view {
+	struct view *view;
 	struct AppContext *ctx;
 	GetTimeIngervals get_intervals;
 	int day_shift;
 };
 
-struct graph_view *create_graph_view(struct AppContext *ctx, GetTimeIngervals get_intervals)
-{
-	struct graph_view *view = (struct graph_view *)malloc(sizeof(struct graph_view));
+int handle_input_graph_view(struct view *, int input_key);
 
-	if(!view)
+void render_graph_view(const struct view *);
+
+void dispose_graph_view(struct view *);
+
+
+struct view *create_graph_view(struct AppContext *ctx, GetTimeIngervals get_intervals)
+{
+	struct graph_view *graph_view = (struct graph_view *)malloc(sizeof(struct graph_view));
+
+	if(!graph_view)
 		return NULL;
+
+	graph_view->view = view_create(render_graph_view, handle_input_graph_view, dispose_graph_view, graph_view);
+
+	if(!graph_view->view) {
+		return NULL;
+	}
 
 	if(!ctx || !get_intervals )
 		return NULL;
 
-	view->ctx = ctx;
-	view->day_shift = 0;
-	view->get_intervals = get_intervals;
+	graph_view->ctx = ctx;
+	graph_view->day_shift = 0;
+	graph_view->get_intervals = get_intervals;
 
-	return view;
+	return graph_view->view;
 }
 
-int handle_input_graph_view(struct graph_view *view, int input)
+int handle_input_graph_view(struct view *v, int input)
 {
+	struct graph_view* view = get_owner(v);
+
+	if(!view) {
+		fprintf(stderr, "Owner is NULL");
+		return 0;
+	}
+
 	switch (input) {
 	case 'r':
 		view->day_shift = 0;
@@ -53,8 +74,15 @@ int handle_input_graph_view(struct graph_view *view, int input)
 	return 0;
 }
 
-void render_graph_view(struct graph_view * view)
+void render_graph_view(const struct view * v)
 {
+	struct graph_view* view = get_owner(v);
+
+	if(!view) {
+		fprintf(stderr, "Owner is NULL");
+		return;
+	}
+
 	struct TimeInterval *time_intervals;
 	size_t n;
 	struct TimeInterval day_interval = get_day_interval(time(NULL), view->day_shift);
@@ -122,7 +150,14 @@ void render_graph_view(struct graph_view * view)
 }
 
 
-void dispose_graph_view(struct graph_view *view)
+void dispose_graph_view(struct view *v)
 {
+	struct graph_view* view = get_owner(v);
+
+	if(!view) {
+		fprintf(stderr, "Owner is NULL");
+		return;
+	}
+
 	free(view);
 }

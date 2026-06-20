@@ -6,8 +6,10 @@
 
 #include "HomeTUI/home_tui.h"
 #include "app_context.h"
+#include "ui/view.h"
 
 struct settings_view {
+	struct view * view;
 	struct AppContext * ctx;
 	struct ui * ui;
 	struct ui_checkbox * stopped_on_start_check_box;
@@ -17,6 +19,12 @@ struct settings_view {
 	SaveSettings save_settings_func;
 	GetSettings get_settings_func;
 };
+
+int handle_input_settings_view(struct view *, int input_key);
+
+void render_settings_view(const struct view *);
+
+void dispose_settings_view(struct view *);
 
 static void on_save_settings(struct ui_button *b, void * arg)
 {
@@ -37,56 +45,76 @@ static void on_save_settings(struct ui_button *b, void * arg)
 	}
 };
 
-struct settings_view *create_settings_view(struct AppContext *ctx,
-					   SaveSettings save_settings,
-					   GetSettings get_settings)
+struct view *create_settings_view(struct AppContext *ctx,
+				  SaveSettings save_settings,
+				  GetSettings get_settings)
 {
-	struct settings_view *view = (struct settings_view *)malloc(sizeof(struct settings_view));
+	struct settings_view *settings_view = (struct settings_view *)malloc(sizeof(struct settings_view));
 
-	if (!view)
+	if (!settings_view)
 		return NULL;
 
-	view->ctx = ctx;
-	view->save_settings_func = save_settings;
-	view->get_settings_func = get_settings;
+	settings_view->view = view_create(render_settings_view, handle_input_settings_view, dispose_settings_view, settings_view);
+
+	if(!settings_view->view) {
+		return NULL;
+	}
+
+	settings_view->ctx = ctx;
+	settings_view->save_settings_func = save_settings;
+	settings_view->get_settings_func = get_settings;
 
 	struct ui *ui = ui_create();
-	view->ui = ui;
+	settings_view->ui = ui;
 
 	if (!ui) {
 		fprintf(stderr, "Settings view: failed to create ui\n");
-		free(view);
+		free(settings_view);
 		return NULL;
 	}
 
 	ui_add_box(ui, 3, 5, 21, 2, "Stopped on app start");
-	view->stopped_on_start_check_box = ui_add_checkbox(
+	settings_view->stopped_on_start_check_box = ui_add_checkbox(
 	    ui, 26, 5, ctx->settings.stopped_on_app_start, NULL);
 
 	char buf[100];
 	sprintf(buf, "%d", ctx->settings.stop_after_min);
 
 	ui_add_box(ui, 3, 9, 21, 2, "Stop after, min");
-	view->stop_after_textbox =  ui_add_textbox(ui, 26, 9, 21, 2, buf, NULL);
+	settings_view->stop_after_textbox =  ui_add_textbox(ui, 26, 9, 21, 2, buf, NULL);
 
 	sprintf(buf, "%d", ctx->settings.min_seconds_to_save);
 	ui_add_box(ui, 3, 13, 21, 2, "Min save time, sec");
-	view->min_time_save_textbox = ui_add_textbox(ui, 26, 13, 21, 2, buf, NULL);
+	settings_view->min_time_save_textbox = ui_add_textbox(ui, 26, 13, 21, 2, buf, NULL);
 
 	ui_add_box(ui, 35, 5, 21, 2, "Save on TERM, sec");
-	view->save_on_term = ui_add_checkbox(ui, 58, 5, ctx->settings.save_on_term_signal, NULL);
+	settings_view->save_on_term = ui_add_checkbox(ui, 58, 5, ctx->settings.save_on_term_signal, NULL);
 
-	ui_add_button(ui, 3, 17, 5, 2, "Save", on_save_settings, view);
+	ui_add_button(ui, 3, 17, 5, 2, "Save", on_save_settings, settings_view);
 
-	return view;
+	return settings_view->view;
 }
 
-int handle_input_settings_view(struct settings_view *view, int input_key) {
+int handle_input_settings_view(struct view *v, int input_key) {
+	struct settings_view* view = get_owner(v);
+
+	if(!view) {
+		fprintf(stderr, "Owner is NULL");
+		return 0;
+	}
+
 	return ui_process_input(view->ui, input_key);
 }
 
-void render_settings_view(struct settings_view *view)
+void render_settings_view(const struct view *v)
 {
+	struct settings_view* view = get_owner(v);
+
+	if(!view) {
+		fprintf(stderr, "Owner is NULL");
+		return;
+	}
+
 	//view->get_settings_func(&view->ctx->settings);
 	//TODO: copy data from settings to ui;
 	render_clear();
@@ -96,7 +124,14 @@ void render_settings_view(struct settings_view *view)
 	render_update();
 }
 
-void dispose_settings_view(struct settings_view *view)
+void dispose_settings_view(struct view *v)
 {
+	struct settings_view* view = get_owner(v);
+
+	if(!view) {
+		fprintf(stderr, "Owner is NULL");
+		return;
+	}
+
 	free(view);
 }

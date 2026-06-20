@@ -6,12 +6,6 @@
 typedef int (*SaveSettings)(struct AppContext *, struct AppSettings new_settings);
 typedef int (*GetSettings)(struct AppSettings * settings);
 
-struct settings_view *create_settings_view(struct AppContext *, SaveSettings, GetSettings);
-
-int handle_input_settings_view(struct settings_view *, int input_key);
-
-void render_settings_view(struct settings_view *);
-
-void dispose_settings_view(struct settings_view *);
+struct view *create_settings_view(struct AppContext *, SaveSettings, GetSettings);
 
 #endif

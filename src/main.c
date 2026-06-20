@@ -82,13 +82,19 @@ int main(void)
 		ctx.settings.save_on_term_signal = 0;
 	}
 
-	struct settings_view *sv = create_settings_view(&ctx, save_settings, db_get_settings);
+	struct view *hv = create_help_view();
+	if (!hv) {
+		fprintf(stderr, "Failed to create help view\n");
+		return 1;
+	}
+
+	struct view *sv = create_settings_view(&ctx, save_settings, db_get_settings);
 	if (!sv) {
 		fprintf(stderr, "Failed to create settings view\n");
 		return 1;
 	}
 
-	struct graph_view *gv = create_graph_view(&ctx, get_time_intervals);
+	struct view *gv = create_graph_view(&ctx, get_time_intervals);
 	if (!gv) {
 		fprintf(stderr, "Failed to create graph view\n");
 		return 1;
@@ -113,13 +119,13 @@ int main(void)
 				view_render(tv);
 				break;
 			case HELP_VIEW:
-				render_help();
+				view_render(hv);
 				break;
 			case GRAPH_VIEW:
-				render_graph_view(gv);
+				view_render(gv);
 				break;
 			case SETTINGS_VIEW:
-				render_settings_view(sv);
+				view_render(sv);
 				break;
 			}
 		}
@@ -141,12 +147,13 @@ int main(void)
 			event = view_process_input(tv, input);
 			break;
 		case HELP_VIEW: /* Nothing to handle here */
+			event = view_process_input(hv, input);
 			break;
 		case GRAPH_VIEW:
-			event = handle_input_graph_view(gv, input);
+			event = view_process_input(gv, input);
 			break;
 		case SETTINGS_VIEW:
-			event = handle_input_settings_view(sv, input);
+			event = view_process_input(sv, input);
 			break;
 		}
 	}

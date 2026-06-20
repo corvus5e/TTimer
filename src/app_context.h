@@ -3,8 +3,6 @@
 
 #include "timer/timer.h"
 
-enum AppView { TIMER_VIEW, HELP_VIEW, GRAPH_VIEW, SETTINGS_VIEW};
-
 struct AppSettings {
 	int stopped_on_app_start;
 	int stop_after_min;
@@ -12,9 +10,11 @@ struct AppSettings {
 	int save_on_term_signal;
 };
 
+struct view;
+
 struct AppContext {
 	struct Timer timer;
-	enum AppView view;
+	struct view *current_view;
 	struct AppSettings settings;
 	int idle_paused;
 	int day_shift; //TODO: Move to graph_view ?

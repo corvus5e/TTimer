@@ -45,6 +45,10 @@ void termination_signal_handler(int);
 
 /* Global pointer to current app context*/
 struct AppContext *s_ctx_ptr = NULL;
+struct view *help_view = NULL;
+struct view *settings_view = NULL;
+struct view *graph_view = NULL;
+struct view *timer_view = NULL;
 
 int main(void)
 {
@@ -82,26 +86,26 @@ int main(void)
 		ctx.settings.save_on_term_signal = 0;
 	}
 
-	struct view *hv = create_help_view();
-	if (!hv) {
+	help_view = create_help_view();
+	if (!help_view) {
 		fprintf(stderr, "Failed to create help view\n");
 		return 1;
 	}
 
-	struct view *sv = create_settings_view(&ctx, save_settings, db_get_settings);
-	if (!sv) {
+	settings_view = create_settings_view(&ctx, save_settings, db_get_settings);
+	if (!settings_view) {
 		fprintf(stderr, "Failed to create settings view\n");
 		return 1;
 	}
 
-	struct view *gv = create_graph_view(&ctx, get_time_intervals);
-	if (!gv) {
+	graph_view = create_graph_view(&ctx, get_time_intervals);
+	if (!graph_view) {
 		fprintf(stderr, "Failed to create graph view\n");
 		return 1;
 	}
 
-	struct view *tv = create_timer_view(&ctx, pause_resume, timer_update_callback);
-	if (!tv) {
+	timer_view = create_timer_view(&ctx, pause_resume, timer_update_callback);
+	if (!timer_view) {
 		fprintf(stderr, "Failed to create graph view\n");
 		return 1;
 	}
@@ -109,25 +113,14 @@ int main(void)
 	if (!ctx.settings.stopped_on_app_start)
 		timer_start(&ctx.timer);
 
+	ctx.current_view = timer_view;
+
 	int input = IDLE_INPUT;
 
 	for (int event = VIEW_UPDATED;;) {
 		/* Render views */
 		if (event) {
-			switch (ctx.view) {
-			case TIMER_VIEW:
-				view_render(tv);
-				break;
-			case HELP_VIEW:
-				view_render(hv);
-				break;
-			case GRAPH_VIEW:
-				view_render(gv);
-				break;
-			case SETTINGS_VIEW:
-				view_render(sv);
-				break;
-			}
+			view_render(ctx.current_view);
 		}
 
 		input = get_keyboard_input();
@@ -141,21 +134,7 @@ int main(void)
 		if (event == VIEW_UPDATED)
 			continue;
 
-		/* Handle input */
-		switch (ctx.view) {
-		case TIMER_VIEW:
-			event = view_process_input(tv, input);
-			break;
-		case HELP_VIEW: /* Nothing to handle here */
-			event = view_process_input(hv, input);
-			break;
-		case GRAPH_VIEW:
-			event = view_process_input(gv, input);
-			break;
-		case SETTINGS_VIEW:
-			event = view_process_input(sv, input);
-			break;
-		}
+		event = view_process_input(ctx.current_view, input);
 	}
 
 	/* Print exit message and release resources */
@@ -176,7 +155,7 @@ int main(void)
 int handle_input_global(struct AppContext *ctx, int *input_key)
 {
 	if (*input_key == ESC) {
-		ctx->view = TIMER_VIEW;
+		ctx->current_view = timer_view;
 		*input_key = IDLE_INPUT;
 		return VIEW_UPDATED;
 	}
@@ -187,20 +166,20 @@ int handle_input_global(struct AppContext *ctx, int *input_key)
 		return EXIT_APP;
 	}
 
-	if(ctx->view != TIMER_VIEW) /* Navigation to other views only from TIMER_VIEW */
+	if(ctx->current_view != timer_view) /* Navigation to other views only from TIMER_VIEW */
 		return 0;
 
 	switch (*input_key) {
 	case 'g':
-		ctx->view = GRAPH_VIEW;
+		ctx->current_view = graph_view;
 		*input_key = IDLE_INPUT;
 		return VIEW_UPDATED;
 	case 'h':
-		ctx->view = HELP_VIEW;
+		ctx->current_view = help_view;
 		*input_key = IDLE_INPUT;
 		return VIEW_UPDATED;
 	case 's':
-		ctx->view = SETTINGS_VIEW;
+		ctx->current_view = settings_view;
 		*input_key = IDLE_INPUT;
 		return VIEW_UPDATED;
 	}
@@ -213,7 +192,7 @@ int save_settings(struct AppContext *ctx, struct AppSettings new_settings)
 {
 	db_save_settings(new_settings);
 	ctx->settings = new_settings;
-	ctx->view = TIMER_VIEW;
+	ctx->current_view = timer_view;
 	timer_update(&ctx->timer);
 	return 0;
 };

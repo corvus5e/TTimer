@@ -2,7 +2,7 @@
 
 struct AppContext create_app_context() {
 	struct AppContext ctx;
-	ctx.view = TIMER_VIEW;
+	ctx.current_view = NULL;
 	ctx.day_shift = 0;
 	ctx.textures = NULL;
 	ctx.idle_paused = 0;

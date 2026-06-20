@@ -13,8 +13,6 @@
 
 #define SECS_DAY 86400
 
-extern const struct Texture _textures[];
-
 struct timer_view {
 	struct view *view;
 	struct AppContext *ctx;
@@ -73,8 +71,6 @@ int handle_input_timer_view(struct view *v, int input)
 #define BIG_TIMER_WIDTH 48
 #define BIG_TIME_HEIGH 7
 
-void render_time_with_built_in_textures(const char *buf, int x, int y);
-
 void render_timer_view(const struct view *v) {
 	const struct timer_view *view = get_owner(v);
 	if(!view) {
@@ -100,8 +96,8 @@ void render_timer_view(const struct view *v) {
 	if ((len = snprintf(&buf[0], BUF_LEN, "%02d:%02d:%02d", hours, minutes, seconds)) < 0)
 		return;
 
-	if(!view->ctx->textures){
-		render_time_with_built_in_textures(buf, x, y);
+	if(view->ctx->textures){
+		render_text(x, y, buf); //TODO: Center nicely
 	}
 	else {
 		int i = 0;
@@ -156,23 +152,3 @@ void dispose_timer_view(struct view *v)
 	free(view);
 }
 
-
-void render_time_with_built_in_textures(const char *buf, int x, int y) {
-	int column_shift = 0;
-
-	for (const char *s = buf; *s; ++s) {
-
-		const struct Texture *t = &_textures[*s == ':' ? 10 : *s - '0'];
-
-		const char *d = t->data;
-
-		for (int i = 0; i < t->heigh; ++i) {
-			for (int j = 0; j < t->width; ++j) {
-				render_cell(j + column_shift + x, i + y,
-					*(d + i * t->width + j));
-			}
-		}
-
-		column_shift += t->width;
-	}
-}

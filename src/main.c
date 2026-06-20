@@ -15,6 +15,7 @@
 
 #include <db/db.h>
 
+#include <ui/view.h>
 #include <ui/settings_view.h>
 #include <ui/graph_view.h>
 #include <ui/timer_view.h>
@@ -93,7 +94,7 @@ int main(void)
 		return 1;
 	}
 
-	struct timer_view *tv = create_timer_view(&ctx, pause_resume, timer_update_callback);
+	struct view **tv = create_timer_view(&ctx, pause_resume, timer_update_callback);
 	if (!tv) {
 		fprintf(stderr, "Failed to create graph view\n");
 		return 1;
@@ -104,12 +105,12 @@ int main(void)
 
 	int input = IDLE_INPUT;
 
-	for (int event = 1;;) {
+	for (int event = VIEW_UPDATED;;) {
 		/* Render views */
 		if (event) {
 			switch (ctx.view) {
-			case TIMER_VIEW:;
-				render_timer_view(tv);
+			case TIMER_VIEW:
+				view_render(tv);
 				break;
 			case HELP_VIEW:
 				render_help();
@@ -137,7 +138,7 @@ int main(void)
 		/* Handle input */
 		switch (ctx.view) {
 		case TIMER_VIEW:
-			event = handle_input_timer_view(tv, input);
+			event = view_process_input(tv, input);
 			break;
 		case HELP_VIEW: /* Nothing to handle here */
 			break;

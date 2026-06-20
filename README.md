@@ -56,7 +56,7 @@ Ensure you have the following installed:
 
 ## 🛠️ Built With
 
-- **C11** - The core language.
+- **C23** - The core language.
 - **Ncurses** - For the terminal user interface.
 - **SQLite3** - For robust data persistence.
 - **HomeTUI** - A custom UI library developed specifically for this project.

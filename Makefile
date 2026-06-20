@@ -8,13 +8,14 @@ hometui_lib:= $(hometui_dir)/bin/libhome_tui.a
 src=src/main.c \
     src/timer/timer.c \
     src/ui/textures.c \
+    src/ui/view.c \
     src/ui/settings_view.c \
     src/ui/graph_view.c \
     src/ui/timer_view.c \
     src/db/db_sqlite.c \
     src/app_context.c \
 
-PLATFORM_LFLAGS := 
+PLATFORM_LFLAGS :=
 
 # OS Detection
 UNAME_S := $(shell uname -s)
@@ -49,7 +50,7 @@ $(hometui_lib):
 	ar rcs $(build_dir)/libsqlite3.a $(build_dir)/sqlite3.o
 
  $(build_dir)/sqlite3.o:
-	$(CC) -c -std=c11 -Wall src/db/sqlite3/sqlite3.c -o $(build_dir)/sqlite3.o
+	$(CC) -c $(COMPILE_FLAGS) src/db/sqlite3/sqlite3.c -o $(build_dir)/sqlite3.o
 
 profile: $(build_dir)/libsqlite3.a $(hometui_lib) # for gprof
 	$(CC) $(COMPILE_FLAGS) \

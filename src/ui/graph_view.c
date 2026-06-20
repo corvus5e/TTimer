@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "HomeTUI/home_tui.h"
 #include "char_codes.h"
+#include "app_context.h"
 
 #define SECS_DAY 86400
 

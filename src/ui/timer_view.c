@@ -6,42 +6,54 @@
 
 #include <timer/timer.h>
 #include <HomeTUI/home_tui.h>
-#include "char_codes.h"
+#include <ui/view.h>
+#include <ui/char_codes.h>
 
 #define BUF_LEN 10
 
 #define SECS_DAY 86400
 
-#define IDLE_INPUT -1 // TODO: Put into HomeTUI
-
-
 extern const struct Texture _textures[];
 
 struct timer_view {
+	struct view *view;
 	struct AppContext *ctx;
 	AppAction on_pause_resume;
 	AppAction update_timer;
 };
 
-struct timer_view *create_timer_view(struct AppContext *ctx, AppAction on_pause_resume, AppAction update_timer)
-{
-	struct timer_view *view = (struct timer_view *)malloc(sizeof(struct timer_view));
+int handle_input_timer_view(struct view **, int input_key);
 
-	if(!view)
+void render_timer_view(const struct view **);
+
+void dispose_timer_view(struct view **);
+
+struct view **create_timer_view(struct AppContext *ctx, AppAction on_pause_resume, AppAction update_timer)
+{
+	struct timer_view *timer_view = (struct timer_view *)malloc(sizeof(struct timer_view));
+	if(!timer_view)
 		return NULL;
+
+	timer_view->view = view_create(render_timer_view, handle_input_timer_view, dispose_timer_view);
+
+	if(!timer_view->view) {
+		return NULL;
+	}
 
 	if(!ctx || !on_pause_resume || !update_timer)
 		return NULL;
 
-	view->ctx = ctx;
-	view->on_pause_resume = on_pause_resume;
-	view->update_timer = update_timer;
+	timer_view->ctx = ctx;
+	timer_view->on_pause_resume = on_pause_resume;
+	timer_view->update_timer = update_timer;
 
-	return view;
+	return &timer_view->view;
 }
 
-int handle_input_timer_view(struct timer_view *view, int input)
+int handle_input_timer_view(struct view **v, int input)
 {
+	struct timer_view* view = container_of(v, struct timer_view, view);
+
 	if (input == ' ') {
 		view->on_pause_resume(view->ctx);
 		return 1;
@@ -58,8 +70,8 @@ int handle_input_timer_view(struct timer_view *view, int input)
 
 void render_time_with_built_in_textures(const char *buf, int x, int y);
 
-void render_timer_view(struct timer_view *view)
-{
+void render_timer_view(const struct view **v) {
+	const struct timer_view *view = container_of(v, struct timer_view, view);
 	int cols = 0;
 	int lines = 0;
 	get_window_size(&cols, &lines);
@@ -122,8 +134,10 @@ void render_timer_view(struct timer_view *view)
 	render_update();
 }
 
-void dispose_timer_view(struct timer_view *view)
+void dispose_timer_view(struct view **v)
 {
+	struct timer_view *view = container_of(v, struct timer_view, view);
+	free(view->view);
 	free(view);
 }
 

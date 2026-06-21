@@ -21,6 +21,8 @@
 #include <ui/timer_view.h>
 #include <ui/help_view.h>
 
+/* Events codes, don't mix with home_tui input process codes */
+#define NO_EVENT 0
 #define EXIT_APP 2
 #define VIEW_UPDATED 3
 
@@ -77,7 +79,6 @@ int main(void)
 		ctx.textures = textures;
 	}
 
-
 	if (db_get_settings(&ctx.settings) != 0) {
 		fprintf(stderr, "Failed to read settings. Using defaults\n");
 		ctx.settings.stopped_on_app_start = 1;
@@ -119,22 +120,27 @@ int main(void)
 
 	for (int event = VIEW_UPDATED;;) {
 		/* Render views */
-		if (event) {
+		if (event != NO_EVENT) {
 			view_render(ctx.current_view);
 		}
 
 		input = get_keyboard_input();
 
-		//TODO: Think on the return value from this handler
-		event = handle_input_global(&ctx, &input);
+		if (!ctx.current_view_focused) {
+			if ((event = handle_input_global(&ctx, &input)) == EXIT_APP)
+				break;
+			if (event == VIEW_UPDATED)
+				continue;
+		}
 
-		if (event == EXIT_APP)
-			break;
+		/* Map process status to event */
+		int status = view_process_input(ctx.current_view, input);
+		if(status == PROCESSED_AND_FOCUSED)
+			ctx.current_view_focused = 1;
+		if(status == PROCESSED_AND_UNFOCUSED)
+			ctx.current_view_focused = 0;
 
-		if (event == VIEW_UPDATED)
-			continue;
-
-		event = view_process_input(ctx.current_view, input);
+		event = status != IGNORED ? VIEW_UPDATED : NO_EVENT;
 	}
 
 	/* Print exit message and release resources */
@@ -167,7 +173,7 @@ int handle_input_global(struct AppContext *ctx, int *input_key)
 	}
 
 	if(ctx->current_view != timer_view) /* Navigation to other views only from TIMER_VIEW */
-		return 0;
+		return NO_EVENT;
 
 	switch (*input_key) {
 	case 'g':
@@ -247,7 +253,7 @@ int save_active_inteval_time(struct Timer *timer, int min_seconds_to_save)
 
 int handle_idle_time(struct AppContext *ctx) {
 	if (ctx->timer.stopped) {
-		return 0;
+		return NO_EVENT;
 	}
 
 	const float limit = 5.0f;
@@ -267,7 +273,7 @@ int handle_idle_time(struct AppContext *ctx) {
 		}
 	}
 
-	return 0;
+	return NO_EVENT;
 }
 
 void termination_signal_handler(int sig_num) {

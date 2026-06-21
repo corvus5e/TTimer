@@ -32,7 +32,7 @@ void render_help_view(const struct view *v)
 
 void dispose_help_view(struct view *v) { free(v); }
 
-int handle_input_help_view(struct view *v, int key) { return 0;}
+int handle_input_help_view(struct view *v, int key) { return IGNORED;}
 
 struct view *create_help_view() {
 	return view_create(render_help_view, handle_input_help_view, dispose_help_view, NULL);

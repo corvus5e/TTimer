@@ -7,7 +7,6 @@ hometui_lib:= $(hometui_dir)/bin/libhome_tui.a
 
 src=src/main.c \
     src/timer/timer.c \
-    src/ui/textures.c \
     src/ui/view.c \
     src/ui/help_view.c \
     src/ui/settings_view.c \

@@ -56,22 +56,22 @@ int handle_input_graph_view(struct view *v, int input)
 
 	if(!view) {
 		fprintf(stderr, "Owner is NULL");
-		return 0;
+		return IGNORED;
 	}
 
 	switch (input) {
 	case 'r':
 		view->day_shift = 0;
-		return 1;
+		return PROCESSED;
 	case 'h':
 		view->day_shift -= 1;
-		return 1;
+		return PROCESSED;
 	case 'l':
 		view->day_shift += 1;
-		return 1;
+		return PROCESSED;
 	}
 
-	return 0;
+	return IGNORED;
 }
 
 void render_graph_view(const struct view * v)

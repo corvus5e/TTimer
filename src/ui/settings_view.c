@@ -100,7 +100,7 @@ int handle_input_settings_view(struct view *v, int input_key) {
 
 	if(!view) {
 		fprintf(stderr, "Owner is NULL");
-		return 0;
+		return IGNORED;
 	}
 
 	return ui_process_input(view->ui, input_key);

@@ -2,7 +2,6 @@
 #define _TTIMER_VIEW_H_
 
 struct view;
-#define VIEW(obj) ((struct view*)(obj))
 
 typedef void (*RenderFunc)(const struct view*);
 typedef int (*ProcessInputFunc)(struct view*, int key);

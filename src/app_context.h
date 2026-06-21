@@ -15,6 +15,7 @@ struct view;
 struct AppContext {
 	struct Timer timer;
 	struct view *current_view;
+	int current_view_focused;
 	struct AppSettings settings;
 	int idle_paused;
 	int day_shift; //TODO: Move to graph_view ?

@@ -54,18 +54,18 @@ int handle_input_timer_view(struct view *v, int input)
 
 	if(!view) {
 		fprintf(stderr, "Owner is NULL");
-		return 0;
+		return IGNORED;
 	}
 
 	if (input == ' ') {
 		view->on_pause_resume(view->ctx);
-		return 1;
+		return PROCESSED;
 	}
 	else {
 		view->update_timer(view->ctx);
 	}
 
-	return 1;
+	return PROCESSED;
 }
 
 #define BIG_TIMER_WIDTH 48
@@ -96,7 +96,7 @@ void render_timer_view(const struct view *v) {
 	if ((len = snprintf(&buf[0], BUF_LEN, "%02d:%02d:%02d", hours, minutes, seconds)) < 0)
 		return;
 
-	if(view->ctx->textures){
+	if(!view->ctx->textures){
 		render_text(x, y, buf); //TODO: Center nicely
 	}
 	else {

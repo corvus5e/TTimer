@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(lldb) Launch TTimer",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/ttimer",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "terminal": "integrated"
+        },
+        {
+            "name": "(lldb) Attach to TTimer",
+            "type": "lldb",
+            "request": "attach",
+            "program": "${workspaceFolder}/build/ttimer",
+            "pid": "${command:pickProcess}"
+        }
+    ]
+}
+

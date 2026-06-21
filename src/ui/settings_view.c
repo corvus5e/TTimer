@@ -15,6 +15,7 @@ struct settings_view {
 	struct ui_checkbox * stopped_on_start_check_box;
 	struct ui_textbox * stop_after_textbox;
 	struct ui_textbox * min_time_save_textbox;
+	struct ui_textbox * idle_time_pause_textbox;
 	struct ui_checkbox * save_on_term;
 	SaveSettings save_settings_func;
 	GetSettings get_settings_func;
@@ -39,6 +40,7 @@ static void on_save_settings(struct ui_button *b, void * arg)
 	new_settings.stop_after_min = atoi(ui_get_text(UI_BOX(sv->stop_after_textbox)));
 	new_settings.min_seconds_to_save = atoi(ui_get_text(UI_BOX(sv->min_time_save_textbox)));
 	new_settings.save_on_term_signal = ui_is_checked(sv->save_on_term);
+	new_settings.idle_pause_time = atoi(ui_get_text(UI_BOX(sv->idle_time_pause_textbox)));
 
 	if(sv->ctx && sv->save_settings_func) {
 		sv->save_settings_func(sv->ctx, new_settings);
@@ -89,6 +91,10 @@ struct view *create_settings_view(struct AppContext *ctx,
 
 	ui_add_box(ui, 35, 5, 21, 2, "Save on TERM, sec");
 	settings_view->save_on_term = ui_add_checkbox(ui, 58, 5, ctx->settings.save_on_term_signal, NULL);
+
+	ui_add_box(ui, 35, 9, 21, 2, "Pause on idle, min");
+	sprintf(buf, "%d", ctx->settings.idle_pause_time);
+	settings_view->idle_time_pause_textbox = ui_add_textbox(ui, 58, 9, 21, 2, buf, NULL);
 
 	ui_add_button(ui, 3, 17, 5, 2, "Save", on_save_settings, settings_view);
 

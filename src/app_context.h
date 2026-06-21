@@ -8,6 +8,7 @@ struct AppSettings {
 	int stop_after_min;
 	int min_seconds_to_save;
 	int save_on_term_signal;
+	int idle_pause_time;
 };
 
 struct view;

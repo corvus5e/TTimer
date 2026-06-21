@@ -81,10 +81,6 @@ int main(void)
 
 	if (db_get_settings(&ctx.settings) != 0) {
 		fprintf(stderr, "Failed to read settings. Using defaults\n");
-		ctx.settings.stopped_on_app_start = 1;
-		ctx.settings.stop_after_min = -1; // Do not stop at all
-		ctx.settings.min_seconds_to_save = 0;
-		ctx.settings.save_on_term_signal = 0;
 	}
 
 	help_view = create_help_view();
@@ -251,12 +247,13 @@ int save_active_inteval_time(struct Timer *timer, int min_seconds_to_save)
 	return db_save_time(timer->last_active_interval);
 }
 
-int handle_idle_time(struct AppContext *ctx) {
-	if (ctx->timer.stopped) {
+int handle_idle_time(struct AppContext *ctx)
+{
+	const float limit = ctx->settings.idle_pause_time;
+	if (ctx->timer.stopped || limit <= 0) {
 		return NO_EVENT;
 	}
 
-	const float limit = 5.0f;
 	float it = idle_time();
 	if(!ctx->idle_paused) {
 		if (!ctx->timer.paused && it > limit) {

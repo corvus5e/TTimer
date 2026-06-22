@@ -22,6 +22,9 @@ UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 	src += src/os_utils/os_utils_linux.c
 	PLATFORM_LFLAGS += -lX11 -lXss
+else ifeq ($(UNAME_S),Darwin)
+	src += src/os_utils/os_utils_mac.c
+	PLATFORM_LFLAGS += -framework CoreGraphics
 else
 	src += src/os_utils/os_utils_stub.c
 endif

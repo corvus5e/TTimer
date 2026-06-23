@@ -55,6 +55,11 @@ void timer_pause(struct Timer *ts)
 	}
 }
 
+int timer_active_elapsed_time(const struct Timer *ts)
+{
+	return ts->active_elapsed_time;
+}
+
 struct TimeInterval get_day_interval(time_t time, int day_shift)
 {
 	struct tm *local_time = localtime(&time);

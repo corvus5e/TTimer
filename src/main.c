@@ -43,6 +43,8 @@ int save_active_inteval_time(struct Timer *, int min_seconds_to_save);
 
 int handle_idle_time(struct AppContext *ctx);
 
+void handle_time_out(struct AppContext *ctx);
+
 void termination_signal_handler(int);
 
 /* Global pointer to current app context*/
@@ -119,6 +121,8 @@ int main(void)
 		if (event != NO_EVENT) {
 			view_render(ctx.current_view);
 		}
+
+		handle_time_out(&ctx);
 
 		input = get_keyboard_input();
 
@@ -271,6 +275,17 @@ int handle_idle_time(struct AppContext *ctx)
 	}
 
 	return NO_EVENT;
+}
+
+void handle_time_out(struct AppContext *ctx)
+{
+	if(ctx->settings.stop_after_min < 0){
+		return;
+	}
+
+	if(timer_active_elapsed_time(&ctx->timer) >= ctx->settings.stop_after_min * 60){
+		timer_stop(&ctx->timer);
+	}
 }
 
 void termination_signal_handler(int sig_num) {

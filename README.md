@@ -1,23 +1,32 @@
 # ⏱️ TTimer
 
 > [!WARNING]
-> **TTimer is currently under development.** Features may change, and you might encounter bugs. Contributions and feedback are welcome!
+> **TTimer is currently under development.** Features may change, and you might encounter bugs.
 
-**TTimer** is a lightweight, terminal-based timer and time tracking application built in C. Designed for developers and terminal enthusiasts, it helps you track time spent on tasks with a clean, distraction-free interface.
+**TTimer** is a lightweight, terminal-based time tracking application built in C. Designed for developers and terminal enthusiasts.
 
 ## ✨ Features
 
-- **Real-time Tracking:** Accurate time measurement with a custom-built TUI abstraction (`HomeTUI`).
+- **Real-time Tracking:** A terminal-rendered timer that supports several fonts.
 - **Data Persistence:** Automatically saves your sessions and settings to a local **SQLite** database (bundled with the project).
 - **Visual Analytics:** Built-in graph view to visualize your time-tracking history.
 - **Customizable:** Configure app behavior (e.g., auto-start, save on exit) via the settings menu.
 - **Keyboard Driven:** Fully navigable via intuitive hotkeys.
+
+## 📸 Screenshots
+
+### Timer View
+![Timer View](pictures/timew_view.png)
+
+### Graph View
+![Graph View](pictures/graph_view.png)
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 **Supported OS:** Linux, MacOS.
+*Note: Idle time traking is available for MacOS and X11-based Linux*
 
 Ensure you have the following installed:
 - `clang` or `gcc`
@@ -30,11 +39,11 @@ Ensure you have the following installed:
 1. Clone the repository (including submodules):
    ```bash
    git clone --recursive https://github.com/corvus5e/ttimer.git
-   cd ttimer
    ```
 
 2. Build the project:
    ```bash
+   cd ttimer
    make
    ```
 
@@ -56,7 +65,7 @@ Ensure you have the following installed:
 
 ## 🛠️ Built With
 
-- **C23** - The core language.
+- **C** - The core language.
 - **Ncurses** - For the terminal user interface.
 - **SQLite3** - For robust data persistence.
 - **HomeTUI** - A custom UI library developed specifically for this project.

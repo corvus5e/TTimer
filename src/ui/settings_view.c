@@ -92,7 +92,7 @@ struct view *create_settings_view(struct AppContext *ctx,
 	ui_add_box(ui, 35, 5, 21, 2, "Save on TERM, sec");
 	settings_view->save_on_term = ui_add_checkbox(ui, 58, 5, ctx->settings.save_on_term_signal, NULL);
 
-	ui_add_box(ui, 35, 9, 21, 2, "Pause on idle, min");
+	ui_add_box(ui, 35, 9, 21, 2, "Pause on idle, sec");
 	sprintf(buf, "%d", ctx->settings.idle_pause_time);
 	settings_view->idle_time_pause_textbox = ui_add_textbox(ui, 58, 9, 21, 2, buf, NULL);
 

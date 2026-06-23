@@ -27,6 +27,8 @@ void timer_stop(struct Timer *ts);
 
 void timer_pause(struct Timer *ts);
 
+int timer_active_elapsed_time(const struct Timer *ts);
+
 /* Returns start and end of the day in which time takes place.
 *  Returns local time.
 *  time is shifted dy day_shift.

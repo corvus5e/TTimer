@@ -35,6 +35,8 @@ int timer_update_callback(struct AppContext *ctx);
 
 int pause_resume(struct AppContext *ctx);
 
+void stop(struct AppContext *ctx);
+
 int get_time_intervals(struct TimeInterval time_period, struct TimeInterval **intervals, size_t *size);
 
 /* Saves time if last active interval is valid (timer is paused or stopped)
@@ -222,6 +224,15 @@ int pause_resume(struct AppContext *ctx)
 	return 1;
 }
 
+void stop(struct AppContext *ctx)
+{
+	ctx->idle_paused = 0;
+	if (!ctx->timer.stopped) {
+		timer_stop(&ctx->timer);
+		save_active_inteval_time(&ctx->timer, ctx->settings.min_seconds_to_save);
+	}
+}
+
 int get_time_intervals(struct TimeInterval time_period, struct TimeInterval **intervals, size_t *size)
 {
 	if (db_get_time(time_period, intervals, size)) {
@@ -284,7 +295,7 @@ void handle_time_out(struct AppContext *ctx)
 	}
 
 	if(timer_active_elapsed_time(&ctx->timer) >= ctx->settings.stop_after_min * 60){
-		timer_stop(&ctx->timer);
+		stop(ctx);
 	}
 }
 

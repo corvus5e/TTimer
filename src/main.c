@@ -2,28 +2,28 @@
  * TTimer - timer, which prints time to terminal
  */
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
-#include <signal.h>
 
 #include <HomeTUI/home_tui.h>
-#include <os_utils/os_utils.h>
 #include <app_context.h>
+#include <os_utils/os_utils.h>
 #include <timer/timer.h>
 
 #include <db/db.h>
 
-#include <ui/view.h>
-#include <ui/settings_view.h>
 #include <ui/graph_view.h>
-#include <ui/timer_view.h>
 #include <ui/help_view.h>
+#include <ui/settings_view.h>
+#include <ui/timer_view.h>
+#include <ui/view.h>
 
 /* Events codes, don't mix with home_tui input process codes */
-#define NO_EVENT 0
-#define EXIT_APP 2
+#define NO_EVENT     0
+#define EXIT_APP     2
 #define VIEW_UPDATED 3
 
 int handle_input_global(struct AppContext *context, int *altered_input);
@@ -37,7 +37,9 @@ int pause_resume(struct AppContext *ctx);
 
 void stop(struct AppContext *ctx);
 
-int get_time_intervals(struct TimeInterval time_period, struct TimeInterval **intervals, size_t *size);
+int get_time_intervals(struct TimeInterval time_period,
+		       struct TimeInterval **intervals,
+		       size_t *size);
 
 /* Saves time if last active interval is valid (timer is paused or stopped)
  * And interval is not zero */
@@ -51,18 +53,17 @@ void termination_signal_handler(int);
 
 /* Global pointer to current app context*/
 struct AppContext *s_ctx_ptr = NULL;
-struct view *help_view = NULL;
-struct view *settings_view = NULL;
-struct view *graph_view = NULL;
-struct view *timer_view = NULL;
+struct view *help_view	     = NULL;
+struct view *settings_view   = NULL;
+struct view *graph_view	     = NULL;
+struct view *timer_view	     = NULL;
 
 int main(void)
 {
 	struct sigaction sa;
 	sa.sa_handler = termination_signal_handler;
-	if(sigaction(SIGINT, &sa, NULL) < 0){
+	if (sigaction(SIGINT, &sa, NULL) < 0)
 		fprintf(stderr, "Failed to setup SIGTERM handler\n");
-	}
 
 	render_init(1000); /* 1 second */
 
@@ -72,20 +73,18 @@ int main(void)
 	}
 
 	struct AppContext ctx = create_app_context();
-	s_ctx_ptr = &ctx;
+	s_ctx_ptr	      = &ctx;
 
 	const struct TextureAtlas *textures = load_figlet_texture("src/HomeTUI/assets/mono12.txt");
 	if (!textures) {
 		fprintf(stderr, "Failed to load fonts\n");
-	}
-	else {
+	} else {
 		get_texture_dims(textures, &ctx.n, &ctx.w, &ctx.h);
 		ctx.textures = textures;
 	}
 
-	if (db_get_settings(&ctx.settings) != 0) {
+	if (db_get_settings(&ctx.settings) != 0)
 		fprintf(stderr, "Failed to read settings. Using defaults\n");
-	}
 
 	help_view = create_help_view();
 	if (!help_view) {
@@ -120,9 +119,8 @@ int main(void)
 
 	for (int event = VIEW_UPDATED;;) {
 		/* Render views */
-		if (event != NO_EVENT) {
+		if (event != NO_EVENT)
 			view_render(ctx.current_view);
-		}
 
 		handle_time_out(&ctx);
 
@@ -137,9 +135,9 @@ int main(void)
 
 		/* Map process status to event */
 		int status = view_process_input(ctx.current_view, input);
-		if(status == PROCESSED_AND_FOCUSED)
+		if (status == PROCESSED_AND_FOCUSED)
 			ctx.current_view_focused = 1;
-		if(status == PROCESSED_AND_UNFOCUSED)
+		if (status == PROCESSED_AND_UNFOCUSED)
 			ctx.current_view_focused = 0;
 
 		event = status != IGNORED ? VIEW_UPDATED : NO_EVENT;
@@ -164,7 +162,7 @@ int handle_input_global(struct AppContext *ctx, int *input_key)
 {
 	if (*input_key == ESC) {
 		ctx->current_view = timer_view;
-		*input_key = IDLE_INPUT;
+		*input_key	  = IDLE_INPUT;
 		return VIEW_UPDATED;
 	}
 
@@ -174,21 +172,21 @@ int handle_input_global(struct AppContext *ctx, int *input_key)
 		return EXIT_APP;
 	}
 
-	if(ctx->current_view != timer_view) /* Navigation to other views only from TIMER_VIEW */
+	if (ctx->current_view != timer_view) /* Navigation to other views only from TIMER_VIEW */
 		return NO_EVENT;
 
 	switch (*input_key) {
 	case 'g':
 		ctx->current_view = graph_view;
-		*input_key = IDLE_INPUT;
+		*input_key	  = IDLE_INPUT;
 		return VIEW_UPDATED;
 	case 'h':
 		ctx->current_view = help_view;
-		*input_key = IDLE_INPUT;
+		*input_key	  = IDLE_INPUT;
 		return VIEW_UPDATED;
 	case 's':
 		ctx->current_view = settings_view;
-		*input_key = IDLE_INPUT;
+		*input_key	  = IDLE_INPUT;
 		return VIEW_UPDATED;
 	}
 
@@ -199,14 +197,14 @@ int handle_input_global(struct AppContext *ctx, int *input_key)
 int save_settings(struct AppContext *ctx, struct AppSettings new_settings)
 {
 	db_save_settings(new_settings);
-	ctx->settings = new_settings;
+	ctx->settings	  = new_settings;
 	ctx->current_view = timer_view;
 	timer_update(&ctx->timer);
 	return 0;
 };
 
 int timer_update_callback(struct AppContext *ctx)
-{	//TODO: Is this callback needed, pass timer_update directly ?
+{ // TODO: Is this callback needed, pass timer_update directly ?
 	timer_update(&ctx->timer);
 	return 1;
 }
@@ -233,7 +231,9 @@ void stop(struct AppContext *ctx)
 	}
 }
 
-int get_time_intervals(struct TimeInterval time_period, struct TimeInterval **intervals, size_t *size)
+int get_time_intervals(struct TimeInterval time_period,
+		       struct TimeInterval **intervals,
+		       size_t *size)
 {
 	if (db_get_time(time_period, intervals, size)) {
 		fprintf(stderr, "Error: Failed to get data from db\n");
@@ -256,7 +256,7 @@ int save_active_inteval_time(struct Timer *timer, int min_seconds_to_save)
 
 	struct TimeInterval ti = timer->last_active_interval;
 
-	if (difftime(ti.end, ti.start) <= min_seconds_to_save) /* Active time interval incorrect or too small */
+	if (difftime(ti.end, ti.start) <= min_seconds_to_save)
 		return 1;
 
 	return db_save_time(timer->last_active_interval);
@@ -265,24 +265,20 @@ int save_active_inteval_time(struct Timer *timer, int min_seconds_to_save)
 int handle_idle_time(struct AppContext *ctx)
 {
 	const float limit = ctx->settings.idle_pause_time;
-	if (ctx->timer.stopped || limit <= 0) {
+	if (ctx->timer.stopped || limit <= 0)
 		return NO_EVENT;
-	}
 
 	float it = idle_time();
-	if(!ctx->idle_paused) {
+	if (!ctx->idle_paused) {
 		if (!ctx->timer.paused && it > limit) {
 			pause_resume(ctx);
 			ctx->idle_paused = 1;
 			return VIEW_UPDATED;
 		}
-	}
-	else {
-		if (ctx->timer.paused && it < limit) {
-			pause_resume(ctx);
-			ctx->idle_paused = 0;
-			return VIEW_UPDATED;
-		}
+	} else if (ctx->timer.paused && it < limit) {
+		pause_resume(ctx);
+		ctx->idle_paused = 0;
+		return VIEW_UPDATED;
 	}
 
 	return NO_EVENT;
@@ -290,23 +286,22 @@ int handle_idle_time(struct AppContext *ctx)
 
 void handle_time_out(struct AppContext *ctx)
 {
-	if(ctx->settings.stop_after_min < 0){
+	if (ctx->settings.stop_after_min < 0)
 		return;
-	}
 
-	if(timer_active_elapsed_time(&ctx->timer) >= ctx->settings.stop_after_min * 60){
+	if (timer_active_elapsed_time(&ctx->timer) >= ctx->settings.stop_after_min * 60)
 		stop(ctx);
-	}
 }
 
-void termination_signal_handler(int sig_num) {
-	if(s_ctx_ptr && s_ctx_ptr->settings.save_on_term_signal ) {
+void termination_signal_handler(int sig_num)
+{
+	if (s_ctx_ptr && s_ctx_ptr->settings.save_on_term_signal) {
 		timer_stop(&s_ctx_ptr->timer);
-		save_active_inteval_time(&s_ctx_ptr->timer, s_ctx_ptr->settings.min_seconds_to_save);
+		save_active_inteval_time(&s_ctx_ptr->timer,
+					 s_ctx_ptr->settings.min_seconds_to_save);
 	}
 
 	render_dispose();
 	db_dispose();
 	exit(0);
 }
-

@@ -74,3 +74,28 @@ clean:
 
 run:
 	./$(build_dir)/$(target) 2> data/std_err.log
+
+PREFIX ?= $(HOME)/.local
+
+.PHONY: install uninstall
+install: main
+	@if [ -n "$$XDG_STATE_HOME" ]; then \
+		mkdir -p "$$XDG_STATE_HOME/TTimer"; \
+		cp -r src/HomeTUI/assets "$$XDG_STATE_HOME/TTimer/"; \
+	elif [ -n "$$HOME" ]; then \
+		mkdir -p "$$HOME/.local/state/TTimer"; \
+		cp -r src/HomeTUI/assets "$$HOME/.local/state/TTimer/"; \
+	fi
+	mkdir -p $(PREFIX)/bin
+	cp $(build_dir)/$(target) $(PREFIX)/bin/
+
+uninstall:
+	rm -f $(PREFIX)/bin/$(target)
+	@if [ -n "$$XDG_STATE_HOME" ]; then \
+		rm -rf "$$XDG_STATE_HOME/TTimer"; \
+	elif [ -n "$$HOME" ]; then \
+		rm -rf "$$HOME/.local/state/TTimer"; \
+	fi
+
+
+

@@ -7,7 +7,15 @@
 #include "sqlite3/sqlite3.h"
 #include <timer/timer.h>
 
-#define DB_NAME "data/time_db.db"
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <string.h>
+#include <limits.h>
+
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
 #define TBL_NAKE "tbl1"
 
 #define SECS_DAY 86400
@@ -60,13 +68,20 @@ static int settings_callback(void *arg, int argc, char **argv, char **azColName)
 	return 0;
 }
 
+static int get_db_path(char *out_path, size_t max_len);
 
 int db_init()
 {
-	int status = sqlite3_open(DB_NAME, &_db);
+	char db_path[PATH_MAX];
+	if (get_db_path(db_path, sizeof(db_path)) != 0) {
+		fprintf(stderr, "Failed to determine database path\n");
+		return 1;
+	}
+
+	int status = sqlite3_open(db_path, &_db);
 
 	if (status) {
-		fprintf(stderr, "Failed to open a database %s\n", DB_NAME);
+		fprintf(stderr, "Failed to open a database %s\n", db_path);
 		sqlite3_close(_db);
 		return 1;
 	}
@@ -238,6 +253,30 @@ int db_save_settings(struct AppSettings s)
 		return 1;
 	}
 
+	return 0;
+}
+
+int get_db_path(char *out_path, size_t max_len) {
+	const char *xdg_state = getenv("XDG_STATE_HOME");
+	if (xdg_state && xdg_state[0] != '\0') {
+		if (snprintf(out_path, max_len, "%s/TTimer/time_db.db", xdg_state) >= (int)max_len) {
+			return -1;
+		}
+		return 0;
+	}
+
+	const char *home = getenv("HOME");
+	if (home && home[0] != '\0') {
+		if (snprintf(out_path, max_len, "%s/.local/state/TTimer/time_db.db", home) >= (int)max_len) {
+			return -1;
+		}
+		return 0;
+	}
+
+	// Fallback to current directory if neither XDG_STATE_HOME nor HOME is available
+	if (snprintf(out_path, max_len, "data/time_db.db") >= (int)max_len) {
+		return -1;
+	}
 	return 0;
 }
 

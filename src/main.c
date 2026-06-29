@@ -7,6 +7,12 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <limits.h>
+
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
 
 #include <HomeTUI/home_tui.h>
 #include <app_context.h>
@@ -51,6 +57,8 @@ void handle_time_out(struct AppContext *ctx);
 
 void termination_signal_handler(int);
 
+int get_asset_path(char *out_path, size_t max_len, const char *asset_name);
+
 /* Global pointer to current app context*/
 struct AppContext *s_ctx_ptr = NULL;
 struct view *help_view	     = NULL;
@@ -75,7 +83,12 @@ int main(void)
 	struct AppContext ctx = create_app_context();
 	s_ctx_ptr	      = &ctx;
 
-	const struct TextureAtlas *textures = load_figlet_texture("src/HomeTUI/assets/mono12.txt");
+	char asset_path[PATH_MAX];
+	if (get_asset_path(asset_path, sizeof(asset_path), "mono12.txt") != 0) {
+		fprintf(stderr, "Failed to determine asset path\n");
+		return 1;
+	}
+	const struct TextureAtlas *textures = load_figlet_texture(asset_path);
 	if (!textures) {
 		fprintf(stderr, "Failed to load fonts\n");
 	} else {
@@ -305,3 +318,28 @@ void termination_signal_handler(int sig_num)
 	db_dispose();
 	exit(0);
 }
+
+int get_asset_path(char *out_path, size_t max_len, const char *asset_name) {
+	const char *xdg_state = getenv("XDG_STATE_HOME");
+	if (xdg_state && xdg_state[0] != '\0') {
+		if (snprintf(out_path, max_len, "%s/TTimer/assets/%s", xdg_state, asset_name) >= (int)max_len) {
+			return -1;
+		}
+		return 0;
+	}
+
+	const char *home = getenv("HOME");
+	if (home && home[0] != '\0') {
+		if (snprintf(out_path, max_len, "%s/.local/state/TTimer/assets/%s", home, asset_name) >= (int)max_len) {
+			return -1;
+		}
+		return 0;
+	}
+
+	// Fallback to local source path if neither XDG_STATE_HOME nor HOME is available
+	if (snprintf(out_path, max_len, "src/HomeTUI/assets/%s", asset_name) >= (int)max_len) {
+		return -1;
+	}
+	return 0;
+}
+

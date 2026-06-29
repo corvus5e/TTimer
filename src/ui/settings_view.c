@@ -8,15 +8,27 @@
 #include "app_context.h"
 #include "ui/view.h"
 
-struct settings_view {
-	struct view * view;
-	struct AppContext * ctx;
-	struct ui * ui;
+#define INPUT_BUF_LEN 50
+
+struct settings_ui {
+	struct ui *ui_ctx;
+
 	struct ui_checkbox * stopped_on_start_check_box;
 	struct ui_textbox * stop_after_textbox;
 	struct ui_textbox * min_time_save_textbox;
 	struct ui_textbox * idle_time_pause_textbox;
 	struct ui_checkbox * save_on_term;
+
+	int	   stopped_on_app_start_buf;
+	char	   stop_after_min_buf[INPUT_BUF_LEN];
+	char	   min_seconds_to_save_buf[INPUT_BUF_LEN];
+	char	   idle_pause_time_buf[INPUT_BUF_LEN];
+};
+
+struct settings_view {
+	struct view * view;
+	struct AppContext * ctx;
+        struct settings_ui ui;
 	SaveSettings save_settings_func;
 	GetSettings get_settings_func;
 };
@@ -27,7 +39,7 @@ void render_settings_view(const struct view *);
 
 void dispose_settings_view(struct view *);
 
-static void on_save_settings(struct ui_button *b, void * arg)
+static void on_save_settings(void * arg)
 {
 	struct settings_view *sv = (struct settings_view *)arg;
 
@@ -36,11 +48,11 @@ static void on_save_settings(struct ui_button *b, void * arg)
 	}
 
 	struct AppSettings new_settings;
-	new_settings.stopped_on_app_start = ui_is_checked(sv->stopped_on_start_check_box);
-	new_settings.stop_after_min = atoi(ui_get_text(UI_BOX(sv->stop_after_textbox)));
-	new_settings.min_seconds_to_save = atoi(ui_get_text(UI_BOX(sv->min_time_save_textbox)));
-	new_settings.save_on_term_signal = ui_is_checked(sv->save_on_term);
-	new_settings.idle_pause_time = atoi(ui_get_text(UI_BOX(sv->idle_time_pause_textbox)));
+	new_settings.stopped_on_app_start = ui_is_checked(sv->ui.stopped_on_start_check_box);
+	new_settings.stop_after_min	  = atoi(ui_get_text(UI_BOX(sv->ui.stop_after_textbox)));
+	new_settings.min_seconds_to_save  = atoi(ui_get_text(UI_BOX(sv->ui.min_time_save_textbox)));
+	new_settings.save_on_term_signal  = ui_is_checked(sv->ui.save_on_term);
+	new_settings.idle_pause_time	  = atoi(ui_get_text(UI_BOX(sv->ui.idle_time_pause_textbox)));
 
 	if(sv->ctx && sv->save_settings_func) {
 		sv->save_settings_func(sv->ctx, new_settings);
@@ -51,54 +63,55 @@ struct view *create_settings_view(struct AppContext *ctx,
 				  SaveSettings save_settings,
 				  GetSettings get_settings)
 {
-	struct settings_view *settings_view = (struct settings_view *)malloc(sizeof(struct settings_view));
+	struct settings_view *sv = (struct settings_view *)malloc(sizeof(struct settings_view));
 
-	if (!settings_view)
+	if (!sv)
 		return NULL;
 
-	settings_view->view = view_create(render_settings_view, handle_input_settings_view, dispose_settings_view, settings_view);
+	sv->view = view_create(render_settings_view, handle_input_settings_view, dispose_settings_view, sv);
 
-	if(!settings_view->view) {
+	if(!sv->view) {
 		return NULL;
 	}
 
-	settings_view->ctx = ctx;
-	settings_view->save_settings_func = save_settings;
-	settings_view->get_settings_func = get_settings;
+	sv->ctx = ctx;
+	sv->save_settings_func = save_settings;
+	sv->get_settings_func = get_settings;
 
-	struct ui *ui = ui_create();
-	settings_view->ui = ui;
+	struct ui *ui_ctx = ui_create();
+	sv->ui.ui_ctx = ui_ctx;
 
-	if (!ui) {
+	if (!ui_ctx) {
 		fprintf(stderr, "Settings view: failed to create ui\n");
-		free(settings_view);
+		free(sv);
 		return NULL;
 	}
 
-	ui_add_box(ui, 3, 5, 21, 2, "Stopped on app start");
-	settings_view->stopped_on_start_check_box = ui_add_checkbox(
-	    ui, 26, 5, ctx->settings.stopped_on_app_start, NULL);
+	ui_add_box(ui_ctx, 3, 5, 21, CONST_STR_ARG("Stopped on app start"));
+	sv->ui.stopped_on_start_check_box = ui_add_checkbox(
+	    ui_ctx, 26, 5, ctx->settings.stopped_on_app_start, nullptr, nullptr);
 
-	char buf[100];
-	sprintf(buf, "%d", ctx->settings.stop_after_min);
+	sprintf(sv->ui.stop_after_min_buf, "%d", ctx->settings.stop_after_min);
 
-	ui_add_box(ui, 3, 9, 21, 2, "Stop after, min");
-	settings_view->stop_after_textbox =  ui_add_textbox(ui, 26, 9, 21, 2, buf, NULL);
+	ui_add_box(ui_ctx, 3, 9, 21, CONST_STR_ARG("Stop after, min"));
+	sv->ui.stop_after_textbox = ui_add_textbox(ui_ctx, 26, 9, 21, sv->ui.stop_after_min_buf,
+						   sizeof(sv->ui.stop_after_min_buf), nullptr, nullptr);
 
-	sprintf(buf, "%d", ctx->settings.min_seconds_to_save);
-	ui_add_box(ui, 3, 13, 21, 2, "Min save time, sec");
-	settings_view->min_time_save_textbox = ui_add_textbox(ui, 26, 13, 21, 2, buf, NULL);
+	sprintf(sv->ui.min_seconds_to_save_buf, "%d", ctx->settings.min_seconds_to_save);
+	ui_add_box(ui_ctx, 3, 13, 21, CONST_STR_ARG("Min save time, sec"));
+	sv->ui.min_time_save_textbox = ui_add_textbox(ui_ctx, 26, 13, 21, sv->ui.min_seconds_to_save_buf,
+						      sizeof(sv->ui.min_seconds_to_save_buf), nullptr, nullptr);
 
-	ui_add_box(ui, 35, 5, 21, 2, "Save on TERM, sec");
-	settings_view->save_on_term = ui_add_checkbox(ui, 58, 5, ctx->settings.save_on_term_signal, NULL);
+	ui_add_box(ui_ctx, 35, 5, 21, CONST_STR_ARG("Save on TERM, sec"));
+	sv->ui.save_on_term = ui_add_checkbox(ui_ctx, 58, 5, ctx->settings.save_on_term_signal, nullptr, nullptr);
 
-	ui_add_box(ui, 35, 9, 21, 2, "Pause on idle, sec");
-	sprintf(buf, "%d", ctx->settings.idle_pause_time);
-	settings_view->idle_time_pause_textbox = ui_add_textbox(ui, 58, 9, 21, 2, buf, NULL);
+	ui_add_box(ui_ctx, 35, 9, 21, CONST_STR_ARG("Pause on idle, sec"));
+	sprintf(sv->ui.idle_pause_time_buf, "%d", ctx->settings.idle_pause_time);
+	sv->ui.idle_time_pause_textbox = ui_add_textbox(ui_ctx, 58, 9, 21, sv->ui.idle_pause_time_buf, sizeof(sv->ui.idle_pause_time_buf), nullptr, nullptr);
 
-	ui_add_button(ui, 3, 17, 5, 2, "Save", on_save_settings, settings_view);
+	ui_add_button(ui_ctx, 3, 17, 5, CONST_STR_ARG("Save"), on_save_settings, sv);
 
-	return settings_view->view;
+	return sv->view;
 }
 
 int handle_input_settings_view(struct view *v, int input_key) {
@@ -109,7 +122,7 @@ int handle_input_settings_view(struct view *v, int input_key) {
 		return IGNORED;
 	}
 
-	return ui_process_input(view->ui, input_key);
+	return ui_process_input(view->ui.ui_ctx, input_key);
 }
 
 void render_settings_view(const struct view *v)
@@ -126,7 +139,7 @@ void render_settings_view(const struct view *v)
 	render_clear();
 	render_text(3, 1, "Settings");
 	render_text(3, 2, "--------");
-	ui_render(view->ui);
+	ui_render(view->ui.ui_ctx);
 	render_update();
 }
 

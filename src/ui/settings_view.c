@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "HomeTUI/home_string.h"
 #include "HomeTUI/home_tui.h"
 #include "app_context.h"
 #include "ui/view.h"
@@ -49,10 +50,10 @@ static void on_save_settings(void * arg)
 
 	struct AppSettings new_settings;
 	new_settings.stopped_on_app_start = ui_is_checked(sv->ui.stopped_on_start_check_box);
-	new_settings.stop_after_min	  = atoi(ui_get_text(UI_BOX(sv->ui.stop_after_textbox)));
-	new_settings.min_seconds_to_save  = atoi(ui_get_text(UI_BOX(sv->ui.min_time_save_textbox)));
+	new_settings.stop_after_min	  = atoi(ui_get_text(UI_BOX(sv->ui.stop_after_textbox)).buf);
+	new_settings.min_seconds_to_save  = atoi(ui_get_text(UI_BOX(sv->ui.min_time_save_textbox)).buf);
 	new_settings.save_on_term_signal  = ui_is_checked(sv->ui.save_on_term);
-	new_settings.idle_pause_time	  = atoi(ui_get_text(UI_BOX(sv->ui.idle_time_pause_textbox)));
+	new_settings.idle_pause_time	  = atoi(ui_get_text(UI_BOX(sv->ui.idle_time_pause_textbox)).buf);
 
 	if(sv->ctx && sv->save_settings_func) {
 		sv->save_settings_func(sv->ctx, new_settings);
@@ -87,29 +88,29 @@ struct view *create_settings_view(struct AppContext *ctx,
 		return NULL;
 	}
 
-	ui_add_box(ui_ctx, 3, 5, 21, CONST_STR_ARG("Stopped on app start"));
+	ui_add_box(ui_ctx, 3, 5, 21, STR_FROM_LITTERAL("Stopped on app start"));
 	sv->ui.stopped_on_start_check_box = ui_add_checkbox(
 	    ui_ctx, 26, 5, ctx->settings.stopped_on_app_start, nullptr, nullptr);
 
 	sprintf(sv->ui.stop_after_min_buf, "%d", ctx->settings.stop_after_min);
 
-	ui_add_box(ui_ctx, 3, 9, 21, CONST_STR_ARG("Stop after, min"));
-	sv->ui.stop_after_textbox = ui_add_textbox(ui_ctx, 26, 9, 21, sv->ui.stop_after_min_buf,
-						   sizeof(sv->ui.stop_after_min_buf), nullptr, nullptr);
+	ui_add_box(ui_ctx, 3, 9, 21, STR_FROM_LITTERAL("Stop after, min"));
+	sv->ui.stop_after_textbox = ui_add_textbox(ui_ctx, 26, 9, 21, STR_FROM_BUF(sv->ui.stop_after_min_buf,
+						   sizeof(sv->ui.stop_after_min_buf)), nullptr, nullptr);
 
 	sprintf(sv->ui.min_seconds_to_save_buf, "%d", ctx->settings.min_seconds_to_save);
-	ui_add_box(ui_ctx, 3, 13, 21, CONST_STR_ARG("Min save time, sec"));
-	sv->ui.min_time_save_textbox = ui_add_textbox(ui_ctx, 26, 13, 21, sv->ui.min_seconds_to_save_buf,
-						      sizeof(sv->ui.min_seconds_to_save_buf), nullptr, nullptr);
+	ui_add_box(ui_ctx, 3, 13, 21, STR_FROM_LITTERAL("Min save time, sec"));
+	sv->ui.min_time_save_textbox = ui_add_textbox(ui_ctx, 26, 13, 21, STR_FROM_BUF(sv->ui.min_seconds_to_save_buf,
+						      sizeof(sv->ui.min_seconds_to_save_buf)), nullptr, nullptr);
 
-	ui_add_box(ui_ctx, 35, 5, 21, CONST_STR_ARG("Save on TERM, sec"));
+	ui_add_box(ui_ctx, 35, 5, 21, STR_FROM_LITTERAL("Save on TERM, sec"));
 	sv->ui.save_on_term = ui_add_checkbox(ui_ctx, 58, 5, ctx->settings.save_on_term_signal, nullptr, nullptr);
 
-	ui_add_box(ui_ctx, 35, 9, 21, CONST_STR_ARG("Pause on idle, sec"));
+	ui_add_box(ui_ctx, 35, 9, 21, STR_FROM_LITTERAL("Pause on idle, sec"));
 	sprintf(sv->ui.idle_pause_time_buf, "%d", ctx->settings.idle_pause_time);
-	sv->ui.idle_time_pause_textbox = ui_add_textbox(ui_ctx, 58, 9, 21, sv->ui.idle_pause_time_buf, sizeof(sv->ui.idle_pause_time_buf), nullptr, nullptr);
+	sv->ui.idle_time_pause_textbox = ui_add_textbox(ui_ctx, 58, 9, 21, STR_FROM_BUF(sv->ui.idle_pause_time_buf, sizeof(sv->ui.idle_pause_time_buf)), nullptr, nullptr);
 
-	ui_add_button(ui_ctx, 3, 17, 5, CONST_STR_ARG("Save"), on_save_settings, sv);
+	ui_add_button(ui_ctx, 3, 17, 5, STR_FROM_LITTERAL("Save"), on_save_settings, sv);
 
 	return sv->view;
 }

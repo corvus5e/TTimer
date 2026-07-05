@@ -41,7 +41,7 @@ int timer_update_callback(struct AppContext *ctx);
 
 int pause_resume(struct AppContext *ctx);
 
-void stop(struct AppContext *ctx);
+int stop(struct AppContext *ctx);
 
 int get_time_intervals(struct TimeInterval time_period,
 		       struct TimeInterval **intervals,
@@ -73,11 +73,10 @@ int main(void)
 	if (sigaction(SIGINT, &sa, NULL) < 0)
 		fprintf(stderr, "Failed to setup SIGTERM handler\n");
 
-	render_init(1000); /* 1 second */
 
 	if (db_init() != 0) {
 		fprintf(stderr, "Failed to initialize db\n");
-		return 1;
+		goto dispose;
 	}
 
 	struct AppContext ctx = create_app_context();
@@ -86,14 +85,7 @@ int main(void)
 	char asset_path[PATH_MAX];
 	if (get_asset_path(asset_path, sizeof(asset_path), "mono12.txt") != 0) {
 		fprintf(stderr, "Failed to determine asset path\n");
-		return 1;
-	}
-	const struct TextureAtlas *textures = load_figlet_texture(asset_path);
-	if (!textures) {
-		fprintf(stderr, "Failed to load fonts\n");
-	} else {
-		get_texture_dims(textures, &ctx.n, &ctx.w, &ctx.h);
-		ctx.textures = textures;
+		goto dispose;
 	}
 
 	if (db_get_settings(&ctx.settings) != 0)
@@ -102,26 +94,37 @@ int main(void)
 	help_view = create_help_view();
 	if (!help_view) {
 		fprintf(stderr, "Failed to create help view\n");
-		return 1;
+		goto dispose;
 	}
 
 	settings_view = create_settings_view(&ctx, save_settings, db_get_settings);
 	if (!settings_view) {
 		fprintf(stderr, "Failed to create settings view\n");
-		return 1;
+		goto dispose;
 	}
 
 	graph_view = create_graph_view(&ctx, get_time_intervals);
 	if (!graph_view) {
 		fprintf(stderr, "Failed to create graph view\n");
-		return 1;
+		goto dispose;
 	}
 
-	timer_view = create_timer_view(&ctx, pause_resume, timer_update_callback);
+	timer_view = create_timer_view(&ctx, pause_resume, stop, timer_update_callback);
 	if (!timer_view) {
 		fprintf(stderr, "Failed to create graph view\n");
-		return 1;
+		goto dispose;
 	}
+
+	render_init(1000); /* 1 second */
+
+	const struct TextureAtlas *textures = load_figlet_texture(asset_path);
+	if (!textures) {
+		fprintf(stderr, "Failed to load fonts\n");
+	} else {
+		get_texture_dims(textures, &ctx.n, &ctx.w, &ctx.h);
+		ctx.textures = textures;
+	}
+
 
 	if (!ctx.settings.stopped_on_app_start)
 		timer_start(&ctx.timer);
@@ -164,6 +167,7 @@ int main(void)
 	set_input_timeout(-1);
 	get_keyboard_input();
 
+dispose:
 	render_dispose();
 	db_dispose();
 	dispose_os_resources();
@@ -235,13 +239,14 @@ int pause_resume(struct AppContext *ctx)
 	return 1;
 }
 
-void stop(struct AppContext *ctx)
+int stop(struct AppContext *ctx)
 {
 	ctx->idle_paused = 0;
 	if (!ctx->timer.stopped) {
 		timer_stop(&ctx->timer);
 		save_active_inteval_time(&ctx->timer, ctx->settings.min_seconds_to_save);
 	}
+        return 0;
 }
 
 int get_time_intervals(struct TimeInterval time_period,

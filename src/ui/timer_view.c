@@ -1,4 +1,5 @@
 #include "timer_view.h"
+#include "app_context.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,10 +15,11 @@
 #define SECS_DAY 86400
 
 struct timer_view {
-	struct view *view;
+	struct view	  *view;
 	struct AppContext *ctx;
-	AppAction on_pause_resume;
-	AppAction update_timer;
+	AppAction	   on_pause_resume;
+	AppAction	   on_reset;
+	AppAction	   update_timer;
 };
 
 int handle_input_timer_view(struct view *, int input_key);
@@ -26,7 +28,7 @@ void render_timer_view(const struct view *);
 
 void dispose_timer_view(struct view *);
 
-struct view *create_timer_view(struct AppContext *ctx, AppAction on_pause_resume, AppAction update_timer)
+struct view *create_timer_view(struct AppContext *ctx, AppAction on_pause_resume, AppAction on_reset, AppAction update_timer)
 {
 	struct timer_view *timer_view = (struct timer_view *)malloc(sizeof(struct timer_view));
 	if(!timer_view)
@@ -38,11 +40,12 @@ struct view *create_timer_view(struct AppContext *ctx, AppAction on_pause_resume
 		return NULL;
 	}
 
-	if(!ctx || !on_pause_resume || !update_timer)
+	if(!ctx || !on_pause_resume || !update_timer || !on_reset)
 		return NULL;
 
 	timer_view->ctx = ctx;
 	timer_view->on_pause_resume = on_pause_resume;
+        timer_view->on_reset = on_reset;
 	timer_view->update_timer = update_timer;
 
 	return timer_view->view;
@@ -60,8 +63,10 @@ int handle_input_timer_view(struct view *v, int input)
 	if (input == ' ') {
 		view->on_pause_resume(view->ctx);
 		return PROCESSED;
-	}
-	else {
+	} else if (input == 'r') {
+		view->on_reset(view->ctx);
+		return PROCESSED;
+	} else {
 		view->update_timer(view->ctx);
 	}
 

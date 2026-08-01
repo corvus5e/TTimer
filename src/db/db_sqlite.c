@@ -43,8 +43,8 @@ static int time_ranges_callback(void *arg, int argc, char **argv, char **azColNa
 		return -1;
 	}
 
-	_time_ranges.data[_time_ranges.size].start = (time_t)atoi(argv[0]);
-	_time_ranges.data[_time_ranges.size].end = (time_t)atoi(argv[1]);
+	_time_ranges.data[_time_ranges.size].start = (time_t)atoll(argv[0]);
+	_time_ranges.data[_time_ranges.size].end = (time_t)atoll(argv[1]);
 	_time_ranges.size++;
 
 	return 0;
@@ -129,7 +129,7 @@ int db_save_time(const struct TimeInterval ti)
 
 	char *insert_query = sqlite3_mprintf("insert into tbl1 (start, end) \
 			values\
-			(%lu, %lu);", ti.start, ti.end);
+			(%lld, %lld);", (long long)ti.start, (long long)ti.end);
 
 	char *errmsg;
 
@@ -159,8 +159,8 @@ int db_get_time(struct TimeInterval interval, struct TimeInterval **time_ranges,
 	time_t end = interval.end;
 
 	char *query = sqlite3_mprintf("select start, end from tbl1 \
-			WHERE start >= %lu AND start < %lu OR end >= %lu AND end < %lu;",
-			start, end, start, end);
+			WHERE end > %lld AND start < %lld;",
+			(long long)start, (long long)end);
 
 	char *errmsg;
 	int status = sqlite3_exec(_db, query, time_ranges_callback, NULL, &errmsg);

@@ -80,11 +80,18 @@ PREFIX ?= $(HOME)/.local
 .PHONY: install uninstall
 install: main
 	@if [ -n "$$XDG_STATE_HOME" ]; then \
-		mkdir -p "$$XDG_STATE_HOME/TTimer"; \
-		cp -r src/HomeTUI/assets "$$XDG_STATE_HOME/TTimer/"; \
+		state_dir="$$XDG_STATE_HOME/TTimer"; \
 	elif [ -n "$$HOME" ]; then \
-		mkdir -p "$$HOME/.local/state/TTimer"; \
-		cp -r src/HomeTUI/assets "$$HOME/.local/state/TTimer/"; \
+		state_dir="$$HOME/.local/state/TTimer"; \
+	fi; \
+	if [ -n "$$state_dir" ]; then \
+		if [ -d "$$state_dir" ] && [ -n "$$(ls -A "$$state_dir" 2>/dev/null)" ]; then \
+			echo "Error: Target directory '$$state_dir' exists and is not empty." >&2; \
+			echo "Please dump the database and remove '$$state_dir' manually." >&2; \
+			exit 1; \
+		fi; \
+		mkdir -p "$$state_dir"; \
+		cp -r src/HomeTUI/assets "$$state_dir/"; \
 	fi
 	mkdir -p $(PREFIX)/bin
 	cp $(build_dir)/$(target) $(PREFIX)/bin/
@@ -92,9 +99,19 @@ install: main
 uninstall:
 	rm -f $(PREFIX)/bin/$(target)
 	@if [ -n "$$XDG_STATE_HOME" ]; then \
-		rm -rf "$$XDG_STATE_HOME/TTimer"; \
+		state_dir="$$XDG_STATE_HOME/TTimer"; \
 	elif [ -n "$$HOME" ]; then \
-		rm -rf "$$HOME/.local/state/TTimer"; \
+		state_dir="$$HOME/.local/state/TTimer"; \
+	fi; \
+	if [ -n "$$state_dir" ]; then \
+		if [ -d "$$state_dir" ] && [ -n "$$(ls -A "$$state_dir" 2>/dev/null)" ]; then \
+			echo "Error: Target directory '$$state_dir' exists and is not empty." >&2; \
+			echo "Please dump the database and remove '$$state_dir' manually." >&2; \
+			exit 1; \
+		fi; \
+		if [ -d "$$state_dir" ]; then \
+			rmdir "$$state_dir"; \
+		fi; \
 	fi
 
 

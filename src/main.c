@@ -245,6 +245,9 @@ int stop(struct AppContext *ctx)
 	if (!ctx->timer.stopped) {
 		timer_stop(&ctx->timer);
 		save_active_inteval_time(&ctx->timer, ctx->settings.min_seconds_to_save);
+		timer_reset(&ctx->timer);
+	} else {
+		timer_reset(&ctx->timer);
 	}
         return 0;
 }

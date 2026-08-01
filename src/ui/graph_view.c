@@ -104,23 +104,22 @@ void render_graph_view(const struct view * v)
 		render_ftext(5 + COLS_WIDTH * h + 1, lines - 1, "%d", h);
 	}
 
-	struct tm *buf;
 	long total = 0;
 
 	for (int i = 0; i < n; ++i) {
 		struct TimeInterval *c = time_intervals + i;
 
-		buf = localtime(&c->start);
-		int start_offset = buf->tm_hour * GRAPH_ROWS + buf->tm_min / MINUTES_BLOCK;
-		int start_day = buf->tm_mday;
+		struct tm start_tm, end_tm;
+		localtime_r(&c->start, &start_tm);
+		localtime_r(&c->end, &end_tm);
 
-		buf = localtime(&c->end);
-		if(start_day < buf->tm_mday){
-			buf->tm_hour = 23;
-			buf->tm_min = 59;
-			buf->tm_mday -= 1;
+		int start_offset = start_tm.tm_hour * GRAPH_ROWS + start_tm.tm_min / MINUTES_BLOCK;
+
+		if (start_tm.tm_mday < end_tm.tm_mday || start_tm.tm_mon < end_tm.tm_mon || start_tm.tm_year < end_tm.tm_year) {
+			end_tm.tm_hour = 23;
+			end_tm.tm_min = 59;
 		}
-		int end_offset = buf->tm_hour * GRAPH_ROWS + buf->tm_min / MINUTES_BLOCK;
+		int end_offset = end_tm.tm_hour * GRAPH_ROWS + end_tm.tm_min / MINUTES_BLOCK;
 
 		long curr_diff = difftime(c->end, c->start);
 		total += curr_diff;
@@ -136,8 +135,9 @@ void render_graph_view(const struct view * v)
 	}
 
 
-	buf = localtime(&day_interval.start); // Get date
-	render_ftext(1, 1, "%02d.%02d.%d",buf->tm_mday, buf->tm_mon + 1, 1900 + buf->tm_year);
+	struct tm day_tm;
+	localtime_r(&day_interval.start, &day_tm); // Get date
+	render_ftext(1, 1, "%02d.%02d.%d", day_tm.tm_mday, day_tm.tm_mon + 1, 1900 + day_tm.tm_year);
 
 
     	long hours = total/ 3600;
